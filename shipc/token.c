@@ -14,13 +14,23 @@ static char advance(Scanner* scanner) {
 	return *(scanner->current - 1);
 }
 
+static char peek(Scanner* scanner) {
+	return *(scanner->current);
+}
+
+static bool match(Scanner* scanner, char expected) {
+	if (peek(scanner) == expected) {
+		advance(scanner);
+		return true;
+	}
+	return false;
+}
+
 static bool isAtEnd(Scanner* scanner) {
 	return *(scanner->current) == '\0';
 }
 
-static char peek(Scanner* scanner) {
-	return *(scanner->current);
-}
+
 
 static char peek_next(Scanner* scanner) {
 	return *((scanner->current + 1));
@@ -71,20 +81,44 @@ static bool is_alpha(char c) {
 }
 
 static Token number(Scanner* scanner) {
+	// run until you encounter a non numerical character.
 	while (is_numeric(peek(scanner))) advance(scanner);
+
+	// if encounter a .
 	if (peek(scanner) == '.' && is_numeric(peek_next(scanner))) {
+		// eat the .
 		advance(scanner);
+		// advance until encountering another non numerical character.
+		// because we already ate the ., encoutering another . will not take it as a valid number. but a regular dot.
 		while (is_numeric(peek(scanner))) advance(scanner);
 	}
 
 	return create_token(scanner, TOKEN_NUMBER);
 }
 
+static TokenType reserved_keywords(Scanner* scanner, int length, const char* rest, TokenType type) {
+	// compare the length of the identifier, and compare the memory
+	if (scanner->current - scanner->start == 1 + length && memcmp(scanner->start + 1, rest, length) == 0) {
+		return type;
+	}
+	return TOKEN_IDENTIFIER;
+}
+
+static TokenType identifier_type(Scanner* scanner) {
+	switch (*(scanner->start))
+	{
+		case 'v': return reserved_keywords(scanner, 2, "ar", TOKEN_VAR);
+		default:
+			return TOKEN_IDENTIFIER;
+	}
+}
+
 static Token identifier(Scanner* scanner) {
 	while (is_alpha(peek(scanner)) || is_numeric(peek(scanner))) advance(scanner);
 
-	return create_token(scanner, TOKEN_IDENTIFIER);
+	return create_token(scanner, identifier_type(scanner));
 }
+
 
 static void remove_whitespaces(Scanner *scanner) {
 	for (;;) {
@@ -104,19 +138,32 @@ static void remove_whitespaces(Scanner *scanner) {
 static Token scan_token(Scanner *scanner) {
 	scanner->start = scanner->current;
 	char c = advance(scanner);
+	// switch the char, and find the write token to create
 	switch (c) {
-		case '+': create_token(scanner, TOKEN_PLUS); break;
-		case '*': create_token(scanner, TOKEN_STAR); break;
-		case '/': create_token(scanner, TOKEN_SLASH); break;
-		case '-': create_token(scanner, TOKEN_MINUS); break;
-		case '{': create_token(scanner, TOKEN_LEFT_BRACE); break;
-		case '}': create_token(scanner, TOKEN_RIGHT_BRACE); break;
-		case '(': create_token(scanner, TOKEN_LEFT_PAREN); break;
-		case ')': create_token(scanner, TOKEN_RIGHT_PAREN); break;
-		case '.': create_token(scanner, TOKEN_DOT); break;
-		case ',': create_token(scanner, TOKEN_COMMA); break;
-		case ';': create_token(scanner, TOKEN_SEMICOLON); break;
-		case '"': string(scanner); break;
+		case '+': return create_token(scanner, TOKEN_PLUS);
+		case '*': return create_token(scanner, TOKEN_STAR); 
+		case '/': return create_token(scanner, TOKEN_SLASH); 
+		case '-': return create_token(scanner, TOKEN_MINUS); 
+		case '{': return create_token(scanner, TOKEN_LEFT_BRACE);
+		case '}': return create_token(scanner, TOKEN_RIGHT_BRACE); 
+		case '(': return create_token(scanner, TOKEN_LEFT_PAREN); 
+		case ')': return create_token(scanner, TOKEN_RIGHT_PAREN); 
+		case '.': return create_token(scanner, TOKEN_DOT);
+		case ',': return create_token(scanner, TOKEN_COMMA);
+		case '=': {
+			return create_token(scanner, match(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+		}
+		case '!': {
+			return create_token(scanner, match(scanner, '=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+		}
+		case '>': {
+			return create_token(scanner, match(scanner, '=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+		}
+		case '<': {
+			return create_token(scanner, match(scanner, '=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+		}
+		case ';': return create_token(scanner, TOKEN_SEMICOLON);
+		case '"': return string(scanner);
 		default: {
 			if (is_numeric(c)) {
 				return number(scanner);
