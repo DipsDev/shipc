@@ -29,6 +29,13 @@ typedef struct {
 	int length;
 } Token;
 
-void tokenize(const char* source);
+typedef struct {
+	const char* start;
+	const char* current;
+	int line;
+} Scanner;
+
+Token tokenize(Scanner *scanner);
+Scanner create_token_scanner(const char* source);
 
 #endif // !SHIP_TOKEN_H_

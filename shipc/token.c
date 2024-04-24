@@ -3,12 +3,6 @@
 
 #include "token.h"
 
-typedef struct {
-	const char* start;
-	const char* current;
-	int line;
-} Scanner;
-
 static char advance(Scanner* scanner) {
 	(scanner->current)++;
 	return *(scanner->current - 1);
@@ -52,7 +46,7 @@ static Token create_error_token(Scanner *scanner, const char* error_message) {
 	return tkn;
 }
 
-static Scanner create_token_scanner(const char* source) {
+Scanner create_token_scanner(const char* source) {
 	Scanner scan;
 	scan.current = source;
 	scan.start = source;
@@ -176,16 +170,14 @@ static Token scan_token(Scanner *scanner) {
 	}
 }
 
-void tokenize(const char* source) {
-	Scanner scanner = create_token_scanner(source);
-	for (;;) {
-		remove_whitespaces(&scanner);
-		if (isAtEnd(&scanner)) {
-			return;
-		}
-		Token token = scan_token(&scanner);
-		printf("%2d '%.*s'\n", token.type, token.length, token.start);
-	};
+Token tokenize(Scanner *scanner) {
+	remove_whitespaces(scanner);
+	if (isAtEnd(scanner)) {
+		return create_token(scanner, TOKEN_EOF);
+	}
+	Token token = scan_token(scanner);
+	return token;
+	
 }
 
 
