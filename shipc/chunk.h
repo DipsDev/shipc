@@ -12,5 +12,6 @@ typedef struct {
 
 void add_code(Chunk* chunk, uint8_t code);
 void init_chunk(Chunk* chunk);
+void print_chunk(Chunk* chunk);
 
 #endif // !SHIP_CHUNK_H_
