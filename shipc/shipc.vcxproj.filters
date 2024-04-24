@@ -24,12 +24,18 @@
     <ClCompile Include="vm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="chunk.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="token.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="chunk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

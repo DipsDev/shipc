@@ -127,11 +127,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="chunk.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="token.c" />
     <ClCompile Include="vm.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="chunk.h" />
     <ClInclude Include="token.h" />
     <ClInclude Include="vm.h" />
   </ItemGroup>
