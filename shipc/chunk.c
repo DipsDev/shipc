@@ -18,6 +18,10 @@ void print_chunk(Chunk* chunk) {
 	}
 }
 
+void free_chunk(Chunk* chunk) {
+	free(chunk->codes);
+}
+
 void add_code(Chunk* chunk, uint8_t code) {
 	// if the total elements will be larger than the capacity
 	if (chunk->count + 1 > chunk->capacity) {

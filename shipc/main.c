@@ -18,5 +18,8 @@ int main() {
 
 	interpret(&vm);
 
+	free_vm(&vm);
+	free_chunk(&chn);
+
 	return 0;
 }
