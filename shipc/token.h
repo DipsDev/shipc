@@ -1,5 +1,6 @@
 #pragma once
 #ifndef SHIP_TOKEN_H_
+#define SHIP_TOKEN_H_
 
 typedef enum {
 	// Single-character tokens.
