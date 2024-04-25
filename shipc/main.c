@@ -7,8 +7,11 @@ int main() {
 	Chunk chunk;
 	init_chunk(&chunk);
 	write_chunk(&chunk, OP_CONSTANT);
-	write_chunk(&chunk, 4);
+	write_chunk(&chunk, 100);
 	write_chunk(&chunk, OP_NEGATE);
+	write_chunk(&chunk, OP_CONSTANT);
+	write_chunk(&chunk, 50);
+	write_chunk(&chunk, OP_DIV);
 	write_chunk(&chunk, OP_HALT);
 	disassemble_chunk(&chunk);
 

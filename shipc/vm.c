@@ -54,6 +54,28 @@ void interpret(VM* vm, Chunk* chunk) {
 				push(vm, NUMBER(-value));
 				break;
 			}
+			case OP_MUL: {
+				Value value = BINARY_OP(pop(vm), *, pop(vm));
+				push(vm, NUMBER(value));
+				break;
+			}
+			case OP_ADD: {
+				Value value = BINARY_OP(pop(vm), +, pop(vm));
+				push(vm, NUMBER(value));
+				break;
+			}
+			case OP_DIV: {
+				Value a = pop(vm);
+				Value value = BINARY_OP(pop(vm), /, a);
+				push(vm, NUMBER(value));
+				break;
+			}
+			case OP_SUB: {
+				Value a = pop(vm);
+				Value value = BINARY_OP(pop(vm), -, a);
+				push(vm, NUMBER(value));
+				break;
+			}
 		}
 	}
 }
