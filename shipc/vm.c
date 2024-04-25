@@ -1,3 +1,5 @@
+
+#include <stdio.h>
 #include "vm.h"
 
 
@@ -41,14 +43,16 @@ void interpret(VM* vm, Chunk* chunk) {
 	for (;;) {
 		uint8_t opcode = READ_BYTE(vm);
 		switch (opcode) {
-			case OP_HALT: return;
+			case OP_HALT: printf("%f", pop(vm)); return;
 			case OP_CONSTANT: {
 				uint8_t constant = READ_BYTE(vm);
 				push(vm, NUMBER(constant));
+				break;
 			}
 			case OP_NEGATE: {
 				Value value = pop(vm);
 				push(vm, NUMBER(-value));
+				break;
 			}
 		}
 	}
