@@ -17,6 +17,10 @@ static void disassemble_instruction(Chunk* chunk, int offset) {
 		case OP_HALT: simple_instruction("OP_HALT");  break;
 		case OP_NEGATE: simple_instruction("OP_NEGATE"); break;
 		case OP_CONSTANT: constant_instruction(chunk->codes[offset + 1]); break;
+		case OP_ADD: simple_instruction("OP_ADD"); break;
+		case OP_SUB: simple_instruction("OP_SUB"); break;
+		case OP_DIV: simple_instruction("OP_DIV"); break;
+		case OP_MUL: simple_instruction("OP_MUL"); break;
 	}
 }
 

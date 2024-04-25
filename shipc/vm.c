@@ -3,7 +3,7 @@
 #include "vm.h"
 
 
-#define READ_BYTE(vm) *vm->ip++
+
 
 
 static void push(VM* vm, Value value) {
@@ -37,15 +37,16 @@ void free_vm(VM* vm) {
 }
 
 void interpret(VM* vm, Chunk* chunk) {
+#define READ_BYTE() *vm->ip++
 	vm->chunk = chunk;
 	vm->ip = chunk->codes;
 
 	for (;;) {
-		uint8_t opcode = READ_BYTE(vm);
+		uint8_t opcode = READ_BYTE();
 		switch (opcode) {
 			case OP_HALT: printf("%f", pop(vm)); return;
 			case OP_CONSTANT: {
-				uint8_t constant = READ_BYTE(vm);
+				uint8_t constant = READ_BYTE();
 				push(vm, NUMBER(constant));
 				break;
 			}
@@ -78,4 +79,6 @@ void interpret(VM* vm, Chunk* chunk) {
 			}
 		}
 	}
+#undef READ_BYTE
 }
+
