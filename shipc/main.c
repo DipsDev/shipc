@@ -6,12 +6,10 @@
 int main() {
 	Chunk chunk;
 	init_chunk(&chunk);
+
+	int constant = add_constant(&chunk, NUMBER(40));
 	write_chunk(&chunk, OP_CONSTANT);
-	write_chunk(&chunk, 100);
-	write_chunk(&chunk, OP_NEGATE);
-	write_chunk(&chunk, OP_CONSTANT);
-	write_chunk(&chunk, 50);
-	write_chunk(&chunk, OP_DIV);
+	write_chunk(&chunk, constant);
 	write_chunk(&chunk, OP_HALT);
 	disassemble_chunk(&chunk);
 
