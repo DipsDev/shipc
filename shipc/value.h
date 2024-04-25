@@ -6,6 +6,17 @@
 typedef double Value;
 
 
+typedef struct {
+	int count;
+	int capacity;
+	Value* arr;
+} ValueArray;
+
+void write_value_array(ValueArray* values, Value value);
+void init_value_array(ValueArray* arr);
+void free_value_array(ValueArray* arr);
+
+
 
 #define NUMBER(value) (Value) (value)
 #define BINARY_OP(a, op, b) \
