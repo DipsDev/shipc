@@ -5,6 +5,8 @@
 #include <stdint.h>
 
 typedef enum { // available op codes
+	OP_CONSTANT,
+	OP_NEGATE,
 	OP_HALT
 } OpCode;
 
