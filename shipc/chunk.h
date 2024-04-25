@@ -28,6 +28,6 @@ typedef struct { // store a chunk of bytecode
 void init_chunk(Chunk* chunk);
 void free_chunk(Chunk* chunk);
 void write_chunk(Chunk* chunk, uint8_t byte);
-void add_constant(Chunk* chunk, Value constant);
+int add_constant(Chunk* chunk, Value constant);
 
 #endif // SHIP_CHUNK_H_
