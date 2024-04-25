@@ -38,6 +38,7 @@ void free_vm(VM* vm) {
 
 void interpret(VM* vm, Chunk* chunk) {
 #define READ_BYTE() *vm->ip++
+#define READ_CONSTANT() chunk->constants.arr[READ_BYTE()]
 	vm->chunk = chunk;
 	vm->ip = chunk->codes;
 
@@ -46,8 +47,7 @@ void interpret(VM* vm, Chunk* chunk) {
 		switch (opcode) {
 			case OP_HALT: printf("%f", pop(vm)); return;
 			case OP_CONSTANT: {
-				uint8_t constant = READ_BYTE();
-				push(vm, NUMBER(constant));
+				push(vm, READ_CONSTANT());
 				break;
 			}
 			case OP_NEGATE: {
@@ -80,5 +80,6 @@ void interpret(VM* vm, Chunk* chunk) {
 		}
 	}
 #undef READ_BYTE
+#undef READ_CONSTANT
 }
 
