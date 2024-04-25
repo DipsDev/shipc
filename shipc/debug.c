@@ -3,26 +3,26 @@
 #include "debug.h"
 
 
-static int simple_instruction(const char* string) {
-	printf("|  %s  |\n", string);
+static int simple_instruction(const char* string, int offset) {
+	printf("| %04d  %s  |\n", offset, string);
 	return 1;
 }
 
 static int constant_instruction(Chunk* chunk, int offset) {
 	uint8_t index = chunk->codes[offset + 1];
-	printf("|  OP_CONSTANT %u (%.2f) |\n", index, chunk->constants.arr[index]);
+	printf("| %04d  OP_CONSTANT %u (%.2f) |\n",offset, index, chunk->constants.arr[index]);
 	return 2;
 }
 
 static int disassemble_instruction(Chunk* chunk, int offset) {
 	uint8_t code = chunk->codes[offset];
 	switch (code) {
-		case OP_HALT: return simple_instruction("OP_HALT");
-		case OP_NEGATE: return simple_instruction("OP_NEGATE");
-		case OP_ADD: return simple_instruction("OP_ADD");
-		case OP_SUB: return simple_instruction("OP_SUB");
-		case OP_DIV: return simple_instruction("OP_DIV");
-		case OP_MUL: return simple_instruction("OP_MUL");
+		case OP_HALT: return simple_instruction("OP_HALT", offset);
+		case OP_NEGATE: return simple_instruction("OP_NEGATE", offset);
+		case OP_ADD: return simple_instruction("OP_ADD", offset);
+		case OP_SUB: return simple_instruction("OP_SUB", offset);
+		case OP_DIV: return simple_instruction("OP_DIV", offset);
+		case OP_MUL: return simple_instruction("OP_MUL", offset);
 		case OP_CONSTANT: return constant_instruction(chunk, offset);
 	}
 }
