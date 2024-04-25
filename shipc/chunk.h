@@ -3,6 +3,7 @@
 #define SHIP_CHUNK_H_
 
 #include <stdint.h>
+#include "value.h"
 
 typedef enum { // available op codes
 	OP_CONSTANT,
@@ -19,11 +20,14 @@ typedef struct { // store a chunk of bytecode
 	uint8_t* codes; // op codes / values
 	int count; // currently active elements
 	int capacity; // available total capacity
+
+	ValueArray constants; // constant pool
 } Chunk;
 
 
 void init_chunk(Chunk* chunk);
 void free_chunk(Chunk* chunk);
 void write_chunk(Chunk* chunk, uint8_t byte);
+void add_constant(Chunk* chunk, Value constant);
 
 #endif // SHIP_CHUNK_H_

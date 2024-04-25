@@ -5,6 +5,10 @@ void init_chunk(Chunk* chunk) {
 	chunk->capacity = 0;
 	chunk->count = 0;
 	chunk->codes = NULL;
+	ValueArray arr;
+	init_value_array(&arr);
+	chunk->constants = arr;
+	
 }
 
 void write_chunk(Chunk* chunk, uint8_t byte) {
@@ -17,7 +21,12 @@ void write_chunk(Chunk* chunk, uint8_t byte) {
 	chunk->count++;
 }
 
+void add_constant(Chunk* chunk, Value constant) {
+	write_value_array(&chunk->constants, constant);
+}
+
 void free_chunk(Chunk* chunk) {
 	FREE_ARRAY(uint8_t, chunk->codes, chunk->capacity);
+	free_value_array(&chunk->constants);
 	init_chunk(chunk);
 }
