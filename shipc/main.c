@@ -8,7 +8,7 @@ int main() {
 	Chunk chunk;
 	init_chunk(&chunk);
 
-	compile("--20", &chunk);
+	compile("~----------20", &chunk);
 	disassemble_chunk(&chunk);
 
 

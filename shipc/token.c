@@ -39,10 +39,10 @@ static Token create_token(Scanner *scanner, TokenType type) {
 	return tkn;
 }
 
-static Token create_error_token(Scanner *scanner, const char* error_message) {
+static Token create_error_token(Scanner *scanner) {
 	Token tkn;
-	tkn.length = strlen(error_message);
-	tkn.start = error_message;
+	tkn.length = (int)(scanner->current - scanner->start);
+	tkn.start = scanner->start;
 	tkn.type = TOKEN_ERROR;
 	tkn.line = scanner->line;
 	return tkn;
@@ -167,7 +167,7 @@ static Token scan_token(Scanner *scanner) {
 			if (is_alpha(c)) {
 				return identifier(scanner);
 			}
-			return create_error_token(scanner, "Unknown Token");
+			return create_error_token(scanner);
 		}
 	}
 }

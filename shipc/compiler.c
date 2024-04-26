@@ -18,6 +18,13 @@ typedef struct {
 // declare functions
 static void parse_expression(Parser* parser, Scanner* scanner);
 
+// error related functions
+static void errorAtCurrent(Parser* parser) {
+	fprintf(stderr, "[ERROR] encountered an error at '%.*s'\n", parser->current.length, parser->current.start);
+	parser->hadError = true;
+
+}
+
 static void init_parser(Parser* parser, Chunk* chunk) {
 	parser->hadError = false;
 	parser->panicMode = false;
@@ -34,8 +41,7 @@ static void advance(Scanner* scanner, Parser* parser) {
 		parser->current = tokenize(scanner);
 		if (parser->current.type != TOKEN_ERROR) return;
 
-		fprintf(stderr, "Error encountered");
-		parser->hadError = true;
+		errorAtCurrent(parser);
 	}
 }
 
@@ -69,7 +75,7 @@ static void end_compile(Parser* parser, Scanner* scanner) {
 		write_chunk(parser->currentChunk, OP_HALT);
 		return;
 	}
-	printf("Error");
+	errorAtCurrent(parser);
 }
 
 bool compile(const char* source, Chunk* chunk) {
