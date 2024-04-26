@@ -63,6 +63,15 @@ static void parse_expression(Parser* parser, Scanner* scanner) {
 	}
 }
 
+static void end_compile(Parser* parser, Scanner* scanner) {
+	advance(scanner, parser);
+	if (parser->current.type == TOKEN_EOF) {
+		write_chunk(parser->currentChunk, OP_HALT);
+		return;
+	}
+	printf("Error");
+}
+
 bool compile(const char* source, Chunk* chunk) {
 	// create objects
 	Scanner scanner = create_token_scanner(source);
@@ -70,6 +79,7 @@ bool compile(const char* source, Chunk* chunk) {
 	init_parser(&parser, chunk); // inits the parser
 	advance(&scanner, &parser); // make sure that parser.current is a valid token
 	parse_expression(&parser, &scanner);
+	end_compile(&parser, &scanner); // end compilation
 
 
 

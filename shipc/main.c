@@ -8,11 +8,16 @@ int main() {
 	Chunk chunk;
 	init_chunk(&chunk);
 
-	compile("-10.15", &chunk);
+	compile("--20", &chunk);
 	disassemble_chunk(&chunk);
+
+
 	VM vm;
 	init_vm(&vm);
 	interpret(&vm, &chunk);
+
+	free_vm(&vm);
+	free_chunk(&chunk);
 
 
 
