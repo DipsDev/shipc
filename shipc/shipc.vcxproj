@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="chunk.c" />
+    <ClCompile Include="compiler.c" />
     <ClCompile Include="debug.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="memory.c" />
@@ -137,6 +138,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="chunk.h" />
+    <ClInclude Include="compiler.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="token.h" />

@@ -35,6 +35,7 @@ static Token create_token(Scanner *scanner, TokenType type) {
 	tkn.length = (int) (scanner->current - scanner->start);
 	tkn.start = scanner->start;
 	tkn.type = type;
+	tkn.line = scanner->line;
 	return tkn;
 }
 
@@ -43,6 +44,7 @@ static Token create_error_token(Scanner *scanner, const char* error_message) {
 	tkn.length = strlen(error_message);
 	tkn.start = error_message;
 	tkn.type = TOKEN_ERROR;
+	tkn.line = scanner->line;
 	return tkn;
 }
 

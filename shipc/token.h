@@ -28,6 +28,7 @@ typedef struct {
 	TokenType type;
 	char* start;
 	int length;
+	int line;
 } Token;
 
 typedef struct {

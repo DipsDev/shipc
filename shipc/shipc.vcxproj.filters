@@ -36,6 +36,9 @@
     <ClCompile Include="debug.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="compiler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="token.h">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
