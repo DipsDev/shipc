@@ -21,6 +21,11 @@ void write_chunk(Chunk* chunk, uint8_t byte) {
 	chunk->count++;
 }
 
+void write_bytes(Chunk* chunk, uint8_t byte, uint8_t byte2) {
+	write_chunk(chunk, byte);
+	write_chunk(chunk, byte2);
+}
+
 uint8_t add_constant(Chunk* chunk, Value constant) {
 	write_value_array(&chunk->constants, constant);
 	return (uint8_t)(chunk->constants.count - 1);
