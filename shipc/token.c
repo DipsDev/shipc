@@ -122,6 +122,7 @@ static void remove_whitespaces(Scanner *scanner) {
 		switch (c) {
 			case ' ':
 			case '\t':
+			case '\n':
 			case '\r': advance(scanner); break;
 			default: {
 				return;
