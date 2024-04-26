@@ -8,9 +8,11 @@ int main() {
 	Chunk chunk;
 	init_chunk(&chunk);
 
-	compile("~----------20", &chunk);
+	if (!compile("~----------20", &chunk)) {
+		free_chunk(&chunk);
+		exit(1);
+	}
 	disassemble_chunk(&chunk);
-
 
 	VM vm;
 	init_vm(&vm);
