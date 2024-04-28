@@ -8,7 +8,7 @@ int main() {
 	Chunk chunk;
 	init_chunk(&chunk);
 
-	if (!compile("!false", &chunk)) {
+	if (!compile("32 + 14", &chunk)) {
 		free_chunk(&chunk);
 		exit(1);
 	}
