@@ -8,7 +8,7 @@ int main() {
 	Chunk chunk;
 	init_chunk(&chunk);
 
-	if (!compile("-20 + 10", &chunk)) {
+	if (!compile("4 + 4 * (3 + 2)", &chunk)) {
 		free_chunk(&chunk);
 		exit(1);
 	}

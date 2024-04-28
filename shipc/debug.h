@@ -3,6 +3,7 @@
 #define SHIP_DEBUG_H_
 
 #include "chunk.h"
+#include "compiler.h"
 
 void disassemble_chunk(Chunk* chunk);
 

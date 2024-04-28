@@ -5,60 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Stack for the 'shunting yard algorithm'
-typedef struct {
-	int count;
-	int capacity;
-	int* values;
-} ExpressionStack;
-
-// stack related functions
-static void init_expression_stack(ExpressionStack* stack) {
-	stack->count = 0;
-	stack->capacity = 0;
-	stack->values = NULL;
-}
-
-static void free_expression_stack(ExpressionStack* stack) {
-	FREE_ARRAY(int, stack->values, stack->capacity);
-	init_expression_stack(stack);
-}
-
-static void push_expression(ExpressionStack* stack, int value) {
-	if (stack->capacity < stack->count + 1) {
-		int oldCapacity = stack->capacity;
-		stack->capacity = GROW_CAPACITY(oldCapacity);
-		stack->values = GROW_ARRAY(int, stack->values, oldCapacity, stack->capacity);
-	}
-	stack->values[stack->count] = value;
-	stack->count++;
-}
-
-static int pop_expression(ExpressionStack* stack) {
-	if (stack->count == 0) {
-		printf("Expression stack is empty");
-		exit(1);
-	}
-	return stack->values[stack->count--];
-}
-
-static int peek_expression(ExpressionStack* stack) {
-	if (stack->count == 0) {
-		printf("Expression stack is empty");
-		exit(1);
-	}
-	return stack->values[stack->count - 1];
-}
-
-static int peek_next_expression(ExpressionStack* stack) {
-	if (stack->count <= 1) {
-		printf("Expression stack is empty");
-		exit(1);
-	}
-	return stack->values[stack->count - 2];
-}
-
-//////
 
 
 // main parser struct
@@ -70,12 +16,87 @@ typedef struct {
 
 	bool hadError;
 	bool panicMode;
-
-	ExpressionStack expressionStack;
 } Parser;
 
-// declare functions
+
+// Precedence utils
+typedef enum {
+	PREC_NONE,
+	PREC_ASSIGNMENT,  // =
+	PREC_OR,          // or
+	PREC_AND,         // and
+	PREC_EQUALITY,    // == !=
+	PREC_COMPARISON,  // < > <= >=
+	PREC_TERM,        // + -
+	PREC_FACTOR,      // * /
+	PREC_UNARY,       // ! -
+	PREC_CALL,        // . ()
+	PREC_PRIMARY
+} Precedence;
+
+// parse functions
 static void parse_expression(Parser* parser, Scanner* scanner);
+static void parse_binary(Parser* parser, Scanner* scanner);
+static void parse_number(Parser* parser, Scanner* scanner);
+static void parse_unary(Parser* parser, Scanner* scanner);
+static void parse_grouping(Parser* parser, Scanner* scanner);
+
+typedef void (*ParseFn)(Parser* parser, Scanner* scanner);
+
+typedef struct {
+	ParseFn prefix; // before identifier. ex: -4
+	ParseFn infix; // after identifier ex: 4 +
+	Precedence precedence;
+} ParseRule;
+
+
+ParseRule rules[] = {
+  [TOKEN_LEFT_PAREN] = {parse_grouping, NULL,   PREC_NONE},
+  [TOKEN_RIGHT_PAREN] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_LEFT_BRACE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_RIGHT_BRACE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_COMMA] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_DOT] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_MINUS] = {parse_unary,    parse_binary, PREC_TERM},
+  [TOKEN_PLUS] = {NULL,     parse_binary, PREC_TERM},
+  [TOKEN_SEMICOLON] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_SLASH] = {NULL,     parse_binary, PREC_FACTOR},
+  [TOKEN_STAR] = {NULL,     parse_binary, PREC_FACTOR},
+  [TOKEN_BANG] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_BANG_EQUAL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_EQUAL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_EQUAL_EQUAL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_GREATER] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_LESS] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_IDENTIFIER] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_STRING] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_PRIMARY},
+  [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_FALSE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_FOR] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_IF] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_NIL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_PRINT] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_RETURN] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_SUPER] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_THIS] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_TRUE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_VAR] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_WHILE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_ERROR] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_EOF] = {NULL,     NULL,   PREC_NONE},
+};
+
+static ParseRule* get_rule(uint8_t token) {
+	return &rules[token];
+}
+
+////
+
+
+
 
 
 // error related functions
@@ -84,11 +105,12 @@ static void error(Parser* parser, const char* string) {
 	parser->hadError = true;
 }
 
-static void errorAtCurrent(Parser* parser) {
+static void error_at_current(Parser* parser) {
 	error(parser, "encountered an error");
 	parser->hadError = true;
 }
 
+////
 
 
 static void init_parser(Parser* parser, Chunk* chunk) {
@@ -107,55 +129,80 @@ static void advance(Scanner* scanner, Parser* parser) {
 		parser->current = tokenize(scanner);
 		if (parser->current.type != TOKEN_ERROR) return;
 
-		errorAtCurrent(parser);
+		error_at_current(parser);
+	}
+}
+
+
+
+static void parse_precedence(Parser* parser, Scanner* scanner, Precedence precendence) {
+	advance(scanner, parser);
+	ParseFn rule = get_rule(parser->previous.type)->prefix;
+	if (rule == NULL) {
+		error(parser, "expected expression at");
+		return;
+	}
+	rule(parser, scanner);
+
+	while (precendence <= get_rule(parser->current.type)->precedence) {
+		advance(scanner, parser);
+		ParseFn infixRule = get_rule(parser->previous.type)->infix;
+		infixRule(parser, scanner);
 	}
 }
 
 static void parse_number(Parser* parser, Scanner* scanner) {
-	double value = strtod(parser->current.start, NULL);
+	double value = strtod(parser->previous.start, NULL);
 	uint8_t index = add_constant(parser->currentChunk, NUMBER(value));
 	write_bytes(parser->currentChunk, OP_CONSTANT, index);
 }
 
-static void parse_binary(Parser* parser, Scanner* scanner) {
-	TokenType prev = parser->current.type;
-	advance(scanner, parser);
-	parse_expression(parser, scanner);
-	switch (prev) {
-	case TOKEN_PLUS: write_chunk(parser->currentChunk, OP_ADD); break;
+static void parse_grouping(Parser* parser, Scanner* scanner) {
+	parse_expression(parser, scanner, PREC_CALL);
+	if (parser->current.type == TOKEN_RIGHT_PAREN) {
+		return;
 	}
+	error(parser, "mismatched paran found at");
 }
+
 
 static void parse_unary(Parser* parser, Scanner* scanner) {
-	// currently the only unary operator that supported is -
-	TokenType type = parser->previous.type;
-	parse_expression(parser, scanner);
+	TokenType operatorType = parser->previous.type;
 
-	switch (parser->previous.type) {
+	// Compile the operand.
+	parse_precedence(parser, scanner, PREC_UNARY);
+
+	// Emit the operator instruction.
+	switch (operatorType) {
 	case TOKEN_MINUS: write_chunk(parser->currentChunk, OP_NEGATE); break;
+	default: return; // Unreachable.
 	}
 }
+
+static void parse_binary(Parser* parser, Scanner* scanner) {
+	TokenType op = parser->previous.type;
+	parse_precedence(parser, scanner, (Precedence) (get_rule(op)->precedence + 1));
+
+	switch (op) {
+	case TOKEN_PLUS: write_chunk(parser->currentChunk, OP_ADD); break;
+	case TOKEN_MINUS: write_chunk(parser->currentChunk, OP_SUB); break;
+	case TOKEN_STAR: write_chunk(parser->currentChunk, OP_MUL); break;
+	case TOKEN_SLASH: write_chunk(parser->currentChunk, OP_DIV); break;
+	}
+}
+
+
 
 static void parse_expression(Parser* parser, Scanner* scanner) {
-	switch (parser->current.type) {
-	case TOKEN_MINUS: parse_unary(parser, scanner); break;
-	case TOKEN_NUMBER: parse_number(parser, scanner); break;
-	case TOKEN_PLUS: parse_binary(parser, scanner); break;
-	default: return;
-	}
-	switch (parser->current.type) {
-	case TOKEN_MINUS: parse_unary(parser, scanner); break;
-	case TOKEN_NUMBER: parse_number(parser, scanner); break;
-	case TOKEN_PLUS: parse_binary(parser, scanner); break;
-	default: return;
-	}
+	parse_precedence(parser, scanner, PREC_ASSIGNMENT);
 }
 
+
+
+
 static void end_compile(Parser* parser, Scanner* scanner) {
-	advance(scanner, parser);
 	if (parser->current.type == TOKEN_EOF) {
 		write_chunk(parser->currentChunk, OP_HALT);
-		free_expression_stack(&parser->expressionStack);
 		return;
 	}
 	error(parser, "expected EOF at end of file got");
@@ -165,9 +212,14 @@ bool compile(const char* source, Chunk* chunk) {
 	// create objects
 	Scanner scanner = create_token_scanner(source);
 	Parser parser;
+
+	// inits
 	init_parser(&parser, chunk); // inits the parser
-	advance(&scanner, &parser); // make sure that parser.current is a valid token
-	parse_expression(&parser, &scanner);
+
+	advance(&scanner, &parser);
+	parse_expression(&parser, &scanner, PREC_NONE);
+
+	// clean ups
 	end_compile(&parser, &scanner); // end compilation
 
 
