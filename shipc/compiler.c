@@ -149,6 +149,14 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 	}
 }
 
+static void parse_boolean(Parser* parser, Scanner* scanner) {
+	TokenType op = parser->previous.type;
+	parse_precedence(parser, scanner, (Precedence) (get_rule(op)->precedence + 1));
+	switch (op) {
+	case TOKEN_EQUAL_EQUAL: write_chunk(parser->currentChunk, OP_COMPARE); break;
+	}
+}
+
 
 static void parse_literal(Parser* parser, Scanner* scanner) {
 	switch (parser->previous.type) {
@@ -189,7 +197,7 @@ ParseRule rules[] = {
   [TOKEN_BANG] = {parse_unary,     NULL,   PREC_NONE},
   [TOKEN_BANG_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_EQUAL_EQUAL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_EQUAL_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
   [TOKEN_GREATER] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS] = {NULL,     NULL,   PREC_NONE},

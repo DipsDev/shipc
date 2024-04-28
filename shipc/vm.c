@@ -79,6 +79,7 @@ void interpret(VM* vm, Chunk* chunk) {
 					runtime_error("* operator accepts only numbers");
 					return;
 				}
+				// simple multi by 2 optimiziation
 				double mul = AS_NUMBER(a) * AS_NUMBER(b);
 				push(vm, VAR_NUMBER(mul));
 				break;
@@ -126,6 +127,22 @@ void interpret(VM* vm, Chunk* chunk) {
 			}
 			case OP_NIL: {
 				push(vm, VAR_NIL);
+				break;
+			}
+			case OP_COMPARE: {
+				Value b = pop(vm);
+				Value a = pop(vm);
+				if (a.type != b.type) {
+					runtime_error("Cannot compare two different types");
+					return;
+				}
+				bool equal = false;
+				switch (a.type) {
+				case VAL_BOOL: equal = AS_BOOL(a) == AS_BOOL(b); break;
+				case VAL_NIL: equal = true; break;
+				case VAL_NUMBER: equal = AS_NUMBER(a) == AS_NUMBER(b); break;
+				}
+				push(vm, VAR_BOOL(equal));
 				break;
 			}
 		}

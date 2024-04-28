@@ -32,6 +32,7 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 		case OP_NOT: return simple_instruction("OP_NOT", offset);
 		case OP_TRUE: return simple_instruction("OP_TRUE", offset);
 		case OP_NIL:return simple_instruction("OP_NIL", offset);
+		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
 		case OP_CONSTANT: return constant_instruction(chunk, offset);
 
 
