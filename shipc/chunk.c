@@ -28,6 +28,10 @@ void write_bytes(Chunk* chunk, uint8_t byte, uint8_t byte2) {
 
 uint8_t add_constant(Chunk* chunk, Value constant) {
 	write_value_array(&chunk->constants, constant);
+	if (chunk->constants.count - 1 > UINT8_MAX) {
+		printf("Too many constants");
+		exit(1);
+	}
 	return (uint8_t)(chunk->constants.count - 1);
 }
 
