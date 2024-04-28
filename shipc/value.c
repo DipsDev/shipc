@@ -24,3 +24,11 @@ void free_value_array(ValueArray* arr) {
 	init_value_array(arr);
 }
 
+void print_value(Value val) {
+	switch (val.type) {
+	case VAL_BOOL: printf("%s", AS_BOOL(val) ? "true" : "false"); break;
+	case VAL_NIL: printf("nil"); break;
+	case VAL_NUMBER: printf("%f", AS_NUMBER(val)); break;
+	}
+}
+

@@ -49,7 +49,7 @@ void interpret(VM* vm, Chunk* chunk) {
 	for (;;) {
 		uint8_t opcode = READ_BYTE();
 		switch (opcode) {
-			case OP_HALT: printf("%f", AS_NUMBER(pop(vm))); return;
+		case OP_HALT: print_value(pop(vm)); return;
 			case OP_CONSTANT: {
 				push(vm, READ_CONSTANT());
 				break;
