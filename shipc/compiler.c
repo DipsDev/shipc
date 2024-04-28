@@ -40,6 +40,7 @@ static void parse_binary(Parser* parser, Scanner* scanner);
 static void parse_number(Parser* parser, Scanner* scanner);
 static void parse_unary(Parser* parser, Scanner* scanner);
 static void parse_grouping(Parser* parser, Scanner* scanner);
+static void parse_literal(Parser* parser, Scanner* scanner);
 
 typedef void (*ParseFn)(Parser* parser, Scanner* scanner);
 
@@ -62,7 +63,7 @@ ParseRule rules[] = {
   [TOKEN_SEMICOLON] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_SLASH] = {NULL,     parse_binary, PREC_FACTOR},
   [TOKEN_STAR] = {NULL,     parse_binary, PREC_FACTOR},
-  [TOKEN_BANG] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_BANG] = {parse_unary,     NULL,   PREC_NONE},
   [TOKEN_BANG_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EQUAL_EQUAL] = {NULL,     NULL,   PREC_NONE},
@@ -74,15 +75,15 @@ ParseRule rules[] = {
   [TOKEN_STRING] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_FALSE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_FOR] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IF] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_NIL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_NIL] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_PRINT] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_RETURN] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_SUPER] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_THIS] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_TRUE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_TRUE] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_VAR] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_WHILE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR] = {NULL,     NULL,   PREC_NONE},
@@ -153,7 +154,7 @@ static void parse_precedence(Parser* parser, Scanner* scanner, Precedence precen
 
 static void parse_number(Parser* parser, Scanner* scanner) {
 	double value = strtod(parser->previous.start, NULL);
-	uint8_t index = add_constant(parser->currentChunk, NUMBER(value));
+	uint8_t index = add_constant(parser->currentChunk, VAR_NUMBER(value));
 	write_bytes(parser->currentChunk, OP_CONSTANT, index);
 }
 
@@ -176,6 +177,7 @@ static void parse_unary(Parser* parser, Scanner* scanner) {
 	// Emit the operator instruction.
 	switch (operatorType) {
 	case TOKEN_MINUS: write_chunk(parser->currentChunk, OP_NEGATE); break;
+	case TOKEN_BANG: write_chunk(parser->currentChunk, OP_NOT); break;
 	default: return; // Unreachable.
 	}
 }
@@ -192,6 +194,14 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 	}
 }
 
+
+static void parse_literal(Parser* parser, Scanner* scanner) {
+	switch (parser->previous.type) {
+	case TOKEN_FALSE: write_chunk(parser->currentChunk, OP_FALSE); break;
+	case TOKEN_TRUE: write_chunk(parser->currentChunk, OP_TRUE); break;
+	case TOKEN_NIL: write_chunk(parser->currentChunk, OP_NIL); break;
+	}
+}
 
 
 static void parse_expression(Parser* parser, Scanner* scanner) {

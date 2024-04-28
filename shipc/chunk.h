@@ -8,10 +8,14 @@
 typedef enum { // available op codes
 	OP_CONSTANT,
 	OP_MUL,
+	OP_FALSE,
+	OP_TRUE,
+	OP_NIL,
 	OP_ADD,
 	OP_SUB,
 	OP_DIV,
 	OP_NEGATE,
+	OP_NOT,
 	OP_HALT
 } OpCode;
 

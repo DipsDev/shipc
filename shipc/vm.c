@@ -24,6 +24,10 @@ static Value pop(VM* vm) {
 	return *vm->sp;
 }
 
+static void runtime_error(const char* message, ...) {
+	printf("[ERROR] Encountered runtime error: %s", message);
+}
+
 void init_vm(VM* vm) {
 	// set the ip to null
 	vm->ip = NULL;
@@ -45,36 +49,83 @@ void interpret(VM* vm, Chunk* chunk) {
 	for (;;) {
 		uint8_t opcode = READ_BYTE();
 		switch (opcode) {
-			case OP_HALT: printf("%f", pop(vm)); return;
+			case OP_HALT: printf("%f", AS_NUMBER(pop(vm))); return;
 			case OP_CONSTANT: {
 				push(vm, READ_CONSTANT());
 				break;
 			}
+			case OP_NOT: {
+				Value value = pop(vm);
+				if (!IS_BOOL(value)) {
+					runtime_error("not operator cannot be called on non boolean object");
+					return;
+				}
+				push(vm, VAR_BOOL(!AS_BOOL(value)));
+				break;
+			}
 			case OP_NEGATE: {
 				Value value = pop(vm);
-				push(vm, NUMBER(-value));
+				if (!IS_NUMBER(value)) {
+					runtime_error("unary operator cannot be called on non number object");
+					return;
+				}
+				push(vm, VAR_NUMBER(-AS_NUMBER(value)));
 				break;
 			}
 			case OP_MUL: {
-				Value value = BINARY_OP(pop(vm), *, pop(vm));
-				push(vm, NUMBER(value));
+				Value a = pop(vm);
+				Value b = pop(vm);
+				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
+					runtime_error("* operator accepts only numbers");
+					return;
+				}
+				double mul = AS_NUMBER(a) * AS_NUMBER(b);
+				push(vm, VAR_NUMBER(mul));
 				break;
 			}
 			case OP_ADD: {
-				Value value = BINARY_OP(pop(vm), +, pop(vm));
-				push(vm, NUMBER(value));
+				Value a = pop(vm);
+				Value b = pop(vm);
+				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
+					runtime_error("+ operator accepts only numbers");
+					return;
+				}
+				double mul = AS_NUMBER(a) + AS_NUMBER(b);
+				push(vm, VAR_NUMBER(mul));
 				break;
 			}
 			case OP_DIV: {
+				Value b = pop(vm);
 				Value a = pop(vm);
-				Value value = BINARY_OP(pop(vm), /, a);
-				push(vm, NUMBER(value));
+				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
+					runtime_error("/ operator accepts only numbers");
+					return;
+				}
+				double mul = AS_NUMBER(a) / AS_NUMBER(b);
+				push(vm, VAR_NUMBER(mul));
 				break;
 			}
 			case OP_SUB: {
+				Value b = pop(vm);
 				Value a = pop(vm);
-				Value value = BINARY_OP(pop(vm), -, a);
-				push(vm, NUMBER(value));
+				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
+					runtime_error("/ operator accepts only numbers");
+					return;
+				}
+				double mul = AS_NUMBER(a) - AS_NUMBER(b);
+				push(vm, VAR_NUMBER(mul));
+				break;
+			}
+			case OP_FALSE: {
+				push(vm, VAR_BOOL(false));
+				break;
+			}
+			case OP_TRUE: {
+				push(vm, VAR_BOOL(true));
+				break;
+			}
+			case OP_NIL: {
+				push(vm, VAR_NIL);
 				break;
 			}
 		}
