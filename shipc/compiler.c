@@ -72,7 +72,7 @@ ParseRule rules[] = {
   [TOKEN_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IDENTIFIER] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_STRING] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_PRIMARY},
+  [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_FALSE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_FOR] = {NULL,     NULL,   PREC_NONE},
@@ -160,6 +160,7 @@ static void parse_number(Parser* parser, Scanner* scanner) {
 static void parse_grouping(Parser* parser, Scanner* scanner) {
 	parse_expression(parser, scanner, PREC_CALL);
 	if (parser->current.type == TOKEN_RIGHT_PAREN) {
+		advance(scanner, parser);
 		return;
 	}
 	error(parser, "mismatched paran found at");
