@@ -1,7 +1,6 @@
 #include "compiler.h"
 #include "token.h"
 #include  "memory.h"
-#include "object.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,8 +189,39 @@ static void parse_literal(Parser* parser, Scanner* scanner) {
 	}
 }
 
+static void parse_if_statement(Parser* parser, Scanner* scanner) {
+	advance(scanner, parser); // eat the if keyword
+	// parse the bool expr
+	parse_expression(parser, scanner); 
+
+	// save the loc before the body, so we can jump after the body if evals to false
+	int before_body = parser->currentChunk->count;
+
+
+	// add a constant so we later can change it
+	uint8_t jmp_index = add_constant(parser->currentChunk, VAR_NUMBER(0));
+	write_bytes(parser->currentChunk, OP_POP_JUMP_IF_FALSE, jmp_index);
+
+	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected { after if expression at"); // expect open block after boolean expression
+	while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
+		// parse the body of the if statement
+		parse_statement(parser, scanner);
+	}
+	// expect user closing the if body
+	expect(scanner, parser, TOKEN_RIGHT_BRACE, "expected } after open block at");
+
+	// calculate the new size of the body, and modify the jmp size
+	int after_body = parser->currentChunk->count;
+	int body_size = (int) (after_body - before_body);
+	change_constant(parser->currentChunk, jmp_index, VAR_NUMBER(body_size));
+}
+
 static void parse_statement(Parser* parser, Scanner* scanner) {
-	// 4 + 5 - 3;
+	// parse statements that do not return anything
+	// for ex: call(a,b,c);
+	switch (parser->current.type) {
+	case TOKEN_IF: return parse_if_statement(parser, scanner);
+	}
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
 	write_chunk(parser->currentChunk, OP_POP_TOP);

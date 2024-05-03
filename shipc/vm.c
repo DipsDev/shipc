@@ -4,8 +4,6 @@
 
 
 
-
-
 static void push(VM* vm, Value value) {
 	if ((size_t)(vm->sp - vm->stack) == STACK_MAX) {
 		printf("Stack overflow");
@@ -43,6 +41,8 @@ void free_vm(VM* vm) {
 void interpret(VM* vm, Chunk* chunk) {
 #define READ_BYTE() *vm->ip++
 #define READ_CONSTANT() chunk->constants.arr[READ_BYTE()]
+
+
 	vm->chunk = chunk;
 	vm->ip = chunk->codes;
 
@@ -148,6 +148,19 @@ void interpret(VM* vm, Chunk* chunk) {
 				}
 				push(vm, VAR_BOOL(equal));
 				break;
+			}
+			case OP_POP_JUMP_IF_FALSE: {
+				Value cond = pop(vm);
+				// if condition is truthy, then don't jump
+				if (is_truthy(cond)) {
+					READ_BYTE(); // the byte after the op is the jmp size, so avoid reading it
+					break;
+				}
+				// if condition is false, jump
+				Value jmp_size = READ_CONSTANT();
+				vm->ip += (int) AS_NUMBER(jmp_size);
+				break;
+
 			}
 		}
 	}

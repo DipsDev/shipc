@@ -3,6 +3,17 @@
 #include "memory.h"
 #include "value.h"
 
+bool is_truthy(Value val) {
+	if (IS_NUMBER(val)) {
+		return AS_NUMBER(val) != 0;
+	}
+	if (IS_BOOL(val)) {
+		return AS_BOOL(val);
+	}
+	return false;
+}
+
+
 void init_value_array(ValueArray* arr) {
 	arr->capacity = 0;
 	arr->count = 0;

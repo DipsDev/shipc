@@ -17,6 +17,7 @@ typedef enum { // available op codes
 	OP_DIV,
 	OP_COMPARE,
 	OP_NEGATE,
+	OP_POP_JUMP_IF_FALSE,
 	OP_NOT,
 	OP_HALT
 } OpCode;
@@ -36,5 +37,6 @@ void free_chunk(Chunk* chunk);
 void write_chunk(Chunk* chunk, uint8_t byte);
 void write_bytes(Chunk* chunk, uint8_t byte, uint8_t byte2);
 uint8_t add_constant(Chunk* chunk, Value constant);
+void change_constant(Chunk* chunk, uint8_t index, Value constant);
 
 #endif // SHIP_CHUNK_H_

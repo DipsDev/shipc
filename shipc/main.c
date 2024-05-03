@@ -10,8 +10,7 @@ int main() {
 	init_chunk(&chunk);
 
 	const char* source_code =
-		"45 - 6 + 3 == 4 - 5 * 4;"
-		"45 - 3 + 2 == 5;";
+		"if 4 == 6 { 4 + 5 / 2 == 4;} 4 + 3 * 3 == 6;";
 
 	if (!compile(source_code, &chunk)) {
 		free_chunk(&chunk);

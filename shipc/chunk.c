@@ -35,6 +35,10 @@ uint8_t add_constant(Chunk* chunk, Value constant) {
 	return (uint8_t)(chunk->constants.count - 1);
 }
 
+void change_constant(Chunk* chunk, uint8_t index, Value constant) {
+	chunk->constants.arr[index] = constant;
+}
+
 void free_chunk(Chunk* chunk) {
 	FREE_ARRAY(uint8_t, chunk->codes, chunk->capacity);
 	free_value_array(&chunk->constants);
