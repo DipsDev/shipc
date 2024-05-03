@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "token.h"
 #include  "memory.h"
+#include "object.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +44,8 @@ typedef struct {
 } ParseRule;
 
 static ParseRule* get_rule(uint8_t token);
+static void parse_statement(Parser* parser, Scanner* scanner);
+static void parse_expression(Parser* parser, Scanner* scanner);
 
 
 
@@ -89,6 +92,14 @@ static void advance(Scanner* scanner, Parser* parser) {
 	}
 }
 
+static void expect(Scanner* scanner, Parser* parser, TokenType type, const char *message) {
+	if (parser->current.type == type) {
+		advance(scanner, parser);
+		return;
+	}
+	error(parser, message);
+}
+
 
 
 static void parse_precedence(Parser* parser, Scanner* scanner, Precedence precendence) {
@@ -113,14 +124,29 @@ static void parse_number(Parser* parser, Scanner* scanner) {
 	write_bytes(parser->currentChunk, OP_CONSTANT, index);
 }
 
-static void parse_grouping(Parser* parser, Scanner* scanner) {
+static void parse_grouping(Parser* parser, Scanner* scanner, const char *message) {
 	parse_precedence(parser, scanner, PREC_CALL);
 	if (parser->current.type == TOKEN_RIGHT_PAREN) {
 		advance(scanner, parser);
 		return;
 	}
-	error(parser, "mismatched paran found at");
+	error(parser, message);
 }
+
+static void parse_boolean(Parser* parser, Scanner* scanner) {
+	TokenType op = parser->previous.type;
+	parse_precedence(parser, scanner, (Precedence)(get_rule(op)->precedence + 1));
+	switch (op) {
+	case TOKEN_EQUAL_EQUAL: write_chunk(parser->currentChunk, OP_COMPARE); break;
+	case TOKEN_BANG_EQUAL: {
+		write_chunk(parser->currentChunk, OP_COMPARE);
+		write_chunk(parser->currentChunk, OP_NOT);
+		break;
+	}
+	}
+}
+
+
 
 
 static void parse_unary(Parser* parser, Scanner* scanner) {
@@ -137,6 +163,10 @@ static void parse_unary(Parser* parser, Scanner* scanner) {
 	}
 }
 
+static void parse_string(Parser* parser, Scanner* scanner) {
+	printf("NOT HANDLED STRING");
+}
+
 static void parse_binary(Parser* parser, Scanner* scanner) {
 	TokenType op = parser->previous.type;
 	parse_precedence(parser, scanner, (Precedence)(get_rule(op)->precedence + 1));
@@ -149,13 +179,7 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 	}
 }
 
-static void parse_boolean(Parser* parser, Scanner* scanner) {
-	TokenType op = parser->previous.type;
-	parse_precedence(parser, scanner, (Precedence) (get_rule(op)->precedence + 1));
-	switch (op) {
-	case TOKEN_EQUAL_EQUAL: write_chunk(parser->currentChunk, OP_COMPARE); break;
-	}
-}
+
 
 
 static void parse_literal(Parser* parser, Scanner* scanner) {
@@ -164,6 +188,13 @@ static void parse_literal(Parser* parser, Scanner* scanner) {
 	case TOKEN_TRUE: write_chunk(parser->currentChunk, OP_TRUE); break;
 	case TOKEN_NIL: write_chunk(parser->currentChunk, OP_NIL); break;
 	}
+}
+
+static void parse_statement(Parser* parser, Scanner* scanner) {
+	// 4 + 5 - 3;
+	parse_expression(parser, scanner);
+	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
+	write_chunk(parser->currentChunk, OP_POP_TOP);
 }
 
 
@@ -195,7 +226,7 @@ ParseRule rules[] = {
   [TOKEN_SLASH] = {NULL,     parse_binary, PREC_FACTOR},
   [TOKEN_STAR] = {NULL,     parse_binary, PREC_FACTOR},
   [TOKEN_BANG] = {parse_unary,     NULL,   PREC_NONE},
-  [TOKEN_BANG_EQUAL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_BANG_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
   [TOKEN_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EQUAL_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
   [TOKEN_GREATER] = {NULL,     NULL,   PREC_NONE},
@@ -203,7 +234,7 @@ ParseRule rules[] = {
   [TOKEN_LESS] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IDENTIFIER] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_STRING] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_STRING] = {parse_string,     NULL,   PREC_NONE},
   [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_NONE},
@@ -235,7 +266,9 @@ bool compile(const char* source, Chunk* chunk) {
 	init_parser(&parser, chunk); // inits the parser
 
 	advance(&scanner, &parser);
-	parse_expression(&parser, &scanner);
+	while (parser.current.type != TOKEN_EOF) {
+		parse_statement(&parser, &scanner);
+	}
 
 	// clean ups
 	end_compile(&parser, &scanner); // end compilation

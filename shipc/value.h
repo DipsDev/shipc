@@ -4,11 +4,10 @@
 
 
 #include <stdbool.h>
-
 typedef enum {
 	VAL_NIL,
 	VAL_BOOL,
-	VAL_NUMBER
+	VAL_NUMBER,
 } ValueType;
 
 typedef struct {

@@ -107,6 +107,7 @@ static TokenType identifier_type(Scanner* scanner) {
 		case 'f': return reserved_keywords(scanner, 4, "alse", TOKEN_FALSE);
 		case 't': return reserved_keywords(scanner, 3, "rue", TOKEN_TRUE);
 		case 'n': return reserved_keywords(scanner, 2, "il", TOKEN_NIL);
+		case 'i': return reserved_keywords(scanner, 1, "f", TOKEN_IF);
 		default:
 			return TOKEN_IDENTIFIER;
 	}

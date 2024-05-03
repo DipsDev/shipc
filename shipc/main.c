@@ -2,13 +2,18 @@
 #include "debug.h"
 #include "compiler.h"
 #include "vm.h"
+#include <stdlib.h>
 
 
 int main() {
 	Chunk chunk;
 	init_chunk(&chunk);
 
-	if (!compile("5 == 5", &chunk)) {
+	const char* source_code =
+		"45 - 6 + 3 == 4 - 5 * 4;"
+		"45 - 3 + 2 == 5;";
+
+	if (!compile(source_code, &chunk)) {
 		free_chunk(&chunk);
 		exit(1);
 	}

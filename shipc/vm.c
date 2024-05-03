@@ -57,7 +57,7 @@ void interpret(VM* vm, Chunk* chunk) {
 			case OP_NOT: {
 				Value value = pop(vm);
 				if (!IS_BOOL(value)) {
-					runtime_error("not operator cannot be called on non boolean object");
+					runtime_error("'not' operator cannot be called on non boolean object");
 					return;
 				}
 				push(vm, VAR_BOOL(!AS_BOOL(value)));
@@ -127,6 +127,10 @@ void interpret(VM* vm, Chunk* chunk) {
 			}
 			case OP_NIL: {
 				push(vm, VAR_NIL);
+				break;
+			}
+			case OP_POP_TOP: {
+				pop(vm);
 				break;
 			}
 			case OP_COMPARE: {
