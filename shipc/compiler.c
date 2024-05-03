@@ -212,7 +212,7 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 
 	// calculate the new size of the body, and modify the jmp size
 	int after_body = parser->currentChunk->count;
-	int body_size = (int) (after_body - before_body);
+	int body_size = after_body - before_body;
 	change_constant(parser->currentChunk, jmp_index, VAR_NUMBER(body_size));
 }
 
