@@ -98,6 +98,11 @@ void interpret(VM* vm, Chunk* chunk) {
 					// should return a + b;
 					StringObj* str_a = AS_STRING(a);
 					StringObj* str_b = AS_STRING(b);
+
+					// free objects in the meanwhile, until we have a garbage collector
+					free_object(str_a);
+					free_object(str_b);
+
 					StringObj* concat = concat_strings(str_a->value, str_a->length, str_b->value, str_b->length);
 
 					// should free str_a and str_b

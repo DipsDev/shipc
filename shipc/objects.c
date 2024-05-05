@@ -4,7 +4,28 @@
 
 #include "objects.h"
 
+// <---- freeing related functions ----->
+static void free_string(Obj* str_obj) {
+	if (str_obj->type != OBJ_STRING) {
+		printf("[ERROR] free_string is supposed to receive only string objects");
+		exit(1);
+	}
+	StringObj* obj = (StringObj*)str_obj;
+	free(obj->value);
+	free(obj);
+	free(str_obj);
+}
 
+void free_object(Obj* obj) {
+	switch (obj->type) {
+	case OBJ_STRING: return free_string(obj);
+	default: printf("[ERROR] cannot free object, it is not yet supported"); // unreachable
+	}
+}
+// <------------------------------------>
+
+
+// <---- compare related functions ----->
 static bool compare_strings(StringObj* a, StringObj* b) {
 	if (a->length != b->length) {
 		return false;
@@ -22,6 +43,7 @@ bool compare_objects(Obj* obj1, Obj* obj2) {
 	case OBJ_STRING: return compare_strings((StringObj*) obj1, (StringObj*) obj2);
 	}
 }
+// <------------------------------------>
 
 
 static char* copy_string(const char* value, int length) {
