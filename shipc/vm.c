@@ -150,14 +150,15 @@ void interpret(VM* vm, Chunk* chunk) {
 				Value b = pop(vm);
 				Value a = pop(vm);
 				if (a.type != b.type) {
-					runtime_error("Cannot compare two different types");
-					return;
+					push(vm, VAR_BOOL(false));
+					break;
 				}
 				bool equal = false;
 				switch (a.type) {
 				case VAL_BOOL: equal = AS_BOOL(a) == AS_BOOL(b); break;
 				case VAL_NIL: equal = true; break;
 				case VAL_NUMBER: equal = AS_NUMBER(a) == AS_NUMBER(b); break;
+				case VAL_OBJ: equal = compare_objects(AS_OBJ(a), AS_OBJ(b));
 				}
 				push(vm, VAR_BOOL(equal));
 				break;

@@ -5,6 +5,25 @@
 #include "objects.h"
 
 
+static bool compare_strings(StringObj* a, StringObj* b) {
+	if (a->length != b->length) {
+		return false;
+	}
+	return memcmp(a->value, b->value, a->length);
+
+}
+
+
+bool compare_objects(Obj* obj1, Obj* obj2) {
+	if (obj1->type != obj2->type) {
+		return false;
+	}
+	switch (obj1->type) {
+	case OBJ_STRING: return compare_strings((StringObj*) obj1, (StringObj*) obj2);
+	}
+}
+
+
 static char* copy_string(const char* value, int length) {
 	char* str_value = (char*)malloc(length + 1);
 	if (str_value == NULL) {
@@ -43,6 +62,7 @@ StringObj* create_string_obj(const char* value, int length) {
 
 	return str_obj;
 }
+
 
 StringObj* concat_strings(const char* value1, int length1, const char* value2, int length2) {
 	// create the required strings
