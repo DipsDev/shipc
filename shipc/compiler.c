@@ -1,9 +1,12 @@
-#include "compiler.h"
-#include "token.h"
-#include  "memory.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "compiler.h"
+#include "token.h"
+#include  "memory.h"
+#include "objects.h"
 
 
 
@@ -163,7 +166,14 @@ static void parse_unary(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_string(Parser* parser, Scanner* scanner) {
-	printf("NOT HANDLED STRING");
+	char* str = parser->previous.start + 1; // remove the first "
+	int length = parser->previous.length - 2; // not including the 2 "
+
+	// create the string object
+	StringObj* obj = create_string_obj(str, length);
+	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
+	write_bytes(parser->currentChunk, OP_CONSTANT, index);
+
 }
 
 static void parse_binary(Parser* parser, Scanner* scanner) {

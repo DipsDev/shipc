@@ -6,12 +6,13 @@
 
 
 static char* allocate_string(const char* value, int length) {
-	char* str_value = (char*)malloc(sizeof(char) * length);
+	char* str_value = (char*)malloc(length + 1);
 	if (str_value == NULL) {
 		printf("[ERROR] cannot allocate string. exiting...\n");
 		exit(1);
 	}
-		memcpy(str_value, value, length);
+	memcpy(str_value, value, length);
+	str_value[length] = '\0';
 	return str_value;
 }	
 
@@ -37,7 +38,7 @@ StringObj* create_string_obj(const char* value, int length) {
 
 	// set the values
 	str_obj->value = string_value;
-	str_obj->obj = object;
+	str_obj->obj = *object;
 	str_obj->length = length;
 
 	return str_obj;

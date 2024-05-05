@@ -8,6 +8,17 @@ static int simple_instruction(const char* string, int offset) {
 	return 1;
 }
 
+static void print_obj(Chunk* chunk, Value val, int offset) {
+	uint8_t i = chunk->codes[offset + 1];
+	switch (AS_OBJ(val)->type) {
+		case OBJ_STRING: {
+			StringObj* obj = AS_STRING(val);
+			printf("| %04d OP_CONSTANT %u (%.*s) |\n", offset, i,obj->length, obj->value);
+			break;
+		}
+	}
+}
+
 static int constant_instruction(Chunk* chunk, int offset) {
 	uint8_t index = chunk->codes[offset + 1];
 	Value val = chunk->constants.arr[index];
@@ -15,6 +26,7 @@ static int constant_instruction(Chunk* chunk, int offset) {
 	case VAL_BOOL: printf("| %04d OP_CONSTANT %u (%s) |\n", offset, index, AS_BOOL(val) ? "true" : "false"); break;
 	case VAL_NIL: printf("| %04d OP_CONSTANT %u (nil) |\n", offset, index); break;
 	case VAL_NUMBER: printf("| %04d OP_CONSTANT %u (%.2f) |\n", offset, index, AS_NUMBER(val)); break;
+	case VAL_OBJ: print_obj(chunk, val, offset);
 	}
 	return 2;
 }

@@ -22,7 +22,7 @@ typedef struct {
 
 /// Object Types
 typedef struct {
-	Obj* obj;
+	Obj obj;
 	char* value;
 	int length;
 } StringObj;
@@ -57,11 +57,14 @@ bool is_truthy(Value val);
 #define AS_OBJ(value) ((value).as.obj)
 
 
+#define AS_STRING(obj) ((StringObj*) AS_OBJ(obj))
+
+
 // create a tagged union
 #define VAR_NUMBER(value) ((Value) {VAL_NUMBER, { .number = value}})
 #define VAR_BOOL(value) ((Value) { VAL_BOOL, { .boolean = value }})
 #define VAR_NIL ((Value) { VAL_NIL, { .number = 0 }})
-#define VAR_OBJ(object) ((Value) { VAl_OBJ, { .obj = (Obj*) object}})
+#define VAR_OBJ(object) ((Value) { VAL_OBJ, { .obj = (Obj*) object}})
 
 
 // type testing
