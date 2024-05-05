@@ -199,6 +199,14 @@ static void parse_literal(Parser* parser, Scanner* scanner) {
 	}
 }
 
+static void parse_debug_statement(Parser* parser, Scanner* scanner) {
+	advance(scanner, parser); // eat the print keyword
+	advance(scanner, parser); // eat the (
+	parse_expression(parser, scanner);
+	expect(scanner, parser, TOKEN_RIGHT_PAREN, "expected ) after func call at");
+	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; after call");
+}
+
 static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	advance(scanner, parser); // eat the if keyword
 	// parse the bool expr
@@ -231,6 +239,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
 	// for ex: call(a,b,c);
 	switch (parser->current.type) {
 	case TOKEN_IF: return parse_if_statement(parser, scanner);
+	case TOKEN_PRINT: return parse_debug_statement(parser, scanner);
 	}
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");

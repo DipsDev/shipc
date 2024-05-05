@@ -9,7 +9,7 @@ static bool compare_strings(StringObj* a, StringObj* b) {
 	if (a->length != b->length) {
 		return false;
 	}
-	return memcmp(a->value, b->value, a->length);
+	return memcmp(a->value, b->value, a->length) == 0;
 
 }
 

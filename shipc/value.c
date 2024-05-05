@@ -35,11 +35,18 @@ void free_value_array(ValueArray* arr) {
 	init_value_array(arr);
 }
 
+static void print_object(Obj* obj) {
+	switch (obj->type) {
+	case OBJ_STRING: printf("%s", ((StringObj*) obj)->value);
+	}
+}
+
 void print_value(Value val) {
 	switch (val.type) {
 	case VAL_BOOL: printf("%s", AS_BOOL(val) ? "true" : "false"); break;
 	case VAL_NIL: printf("nil"); break;
 	case VAL_NUMBER: printf("%f", AS_NUMBER(val)); break;
+	case VAL_OBJ: print_object(AS_OBJ(val)); break;
 	}
 }
 
