@@ -73,5 +73,11 @@ bool is_truthy(Value val);
 #define IS_NIL(value) ((value).type == VAL_NIL)
 #define IS_OBJ(value) ((value).type == VAL_OBJ)
 
+static inline bool test_obj_types(Value value, ObjType type) {
+	return IS_OBJ(value) && AS_OBJ(value)->type == type;
+}
+
+#define IS_STRING(value) (test_obj_types(value, OBJ_STRING))
+
 #endif // !SHIP_VALUE_H_
 

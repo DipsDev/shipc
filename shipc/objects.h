@@ -5,6 +5,7 @@
 #include "value.h"
 
 StringObj* create_string_obj(const char* value, int length);
+StringObj* concat_strings(const char* value1, int length1, const char* value2, int length2);
 
 #endif // !SHIP_OBJECTS_H
 

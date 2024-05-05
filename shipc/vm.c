@@ -1,6 +1,8 @@
 
 #include <stdio.h>
+
 #include "vm.h"
+#include "objects.h"
 
 
 
@@ -85,15 +87,26 @@ void interpret(VM* vm, Chunk* chunk) {
 				break;
 			}
 			case OP_ADD: {
-				Value a = pop(vm);
 				Value b = pop(vm);
-				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
-					runtime_error("+ operator accepts only numbers");
-					return;
+				Value a = pop(vm);
+				if (IS_NUMBER(a) && IS_NUMBER(b)) {
+					double mul = AS_NUMBER(a) + AS_NUMBER(b);
+					push(vm, VAR_NUMBER(mul));
+					break;
 				}
-				double mul = AS_NUMBER(a) + AS_NUMBER(b);
-				push(vm, VAR_NUMBER(mul));
-				break;
+				if (IS_STRING(a) && IS_STRING(b)) {
+					// should return a + b;
+					StringObj* str_a = AS_STRING(a);
+					StringObj* str_b = AS_STRING(b);
+					StringObj* concat = concat_strings(str_a->value, str_a->length, str_b->value, str_b->length);
+
+					// should free str_a and str_b
+					push(vm, VAR_OBJ(concat));
+					break;
+				}
+				runtime_error("unknown operands for '+' operator");
+				return;
+				
 			}
 			case OP_DIV: {
 				Value b = pop(vm);
