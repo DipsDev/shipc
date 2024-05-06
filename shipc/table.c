@@ -5,6 +5,7 @@
 #include "table.h"
 #include "string.h"
 #include "memory.h"
+#include "objects.h"
 
 
 
@@ -94,6 +95,10 @@ void free_hash_map(HashMap* map) {
 		}
 		HashNode* pos = map->arr[i];
 		while (pos != NULL) {
+			if (IS_OBJ(pos->value)) {
+				free_object(AS_OBJ(pos->value));
+			}
+
 			HashNode* before = pos->next;
 			free(pos);
 			pos = before;
