@@ -176,7 +176,7 @@ void interpret(VM* vm, Chunk* chunk) {
 				Value cond = pop(vm);
 				// if condition is truthy, then don't jump
 				if (is_truthy(cond)) {
-					READ_BYTE(); // the byte after the op is the jmp size, so avoid reading it
+					(void) READ_BYTE(); // the byte after the op is the jmp size, so avoid reading it
 					break;
 				}
 				// if condition is false, jump
