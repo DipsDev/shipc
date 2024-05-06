@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "vm.h"
 #include "objects.h"
@@ -34,10 +35,13 @@ void init_vm(VM* vm) {
 
 	// set the sp to the beginning of the stack
 	vm->sp = vm->stack;
+
+	vm->globals = (HashMap*) malloc(sizeof(HashMap));
+	create_variable_map(vm->globals);
 }
 
 void free_vm(VM* vm) {
-
+	free_hash_map(vm->globals);
 }
 
 void interpret(VM* vm, Chunk* chunk) {
@@ -180,6 +184,28 @@ void interpret(VM* vm, Chunk* chunk) {
 				vm->ip += (int) AS_NUMBER(jmp_size);
 				break;
 
+			}
+			case OP_STORE_GLOBAL: {
+				Value var_value = pop(vm);
+				Value variable_name = READ_CONSTANT();
+
+				if (!IS_STRING(variable_name)) {
+					runtime_error("expected variable name to be string");
+					exit(1);
+				}
+				StringObj* obj = AS_STRING(variable_name);
+				put_node(vm->globals, obj->value, obj->length, var_value);
+				break;
+			}
+			case OP_LOAD_GLOBAL: {
+				Value variable_name = READ_CONSTANT();
+				if (!IS_STRING(variable_name)) {
+					runtime_error("expected variable name to be string");
+					exit(1);
+				}
+				StringObj* obj = AS_STRING(variable_name);
+				push(vm, get_node(vm->globals, obj->value, obj->length)->value);
+				break;
 			}
 		}
 	}

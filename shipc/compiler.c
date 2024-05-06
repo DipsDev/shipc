@@ -234,12 +234,36 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	change_constant(parser->currentChunk, jmp_index, VAR_NUMBER(body_size));
 }
 
+static void parse_variable(Parser* parser, Scanner* scanner) {
+	// parses a variable statement:
+	// var x = 5;
+	advance(scanner, parser); // eat the var keyword
+	Token variable_ident = parser->current;
+	advance(scanner, parser);
+	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
+
+	parse_precedence(parser, scanner, PREC_CALL); // parse the expression value
+	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
+	
+	// create the string object
+	StringObj* obj = create_string_obj(variable_ident.start, variable_ident.length);
+	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
+	write_bytes(parser->currentChunk, OP_STORE_GLOBAL, index);
+}
+
+static void parse_identifier(Parser* parser, Scanner* scanner) {
+	StringObj* obj = create_string_obj(parser->previous.start, parser->previous.length);
+	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
+	write_bytes(parser->currentChunk, OP_LOAD_GLOBAL, index);
+}
+
 static void parse_statement(Parser* parser, Scanner* scanner) {
 	// parse statements that do not return anything
-	// for ex: call(a,b,c);
+	// for ex: call(a,b,c);;
 	switch (parser->current.type) {
 	case TOKEN_IF: return parse_if_statement(parser, scanner);
 	case TOKEN_PRINT: return parse_debug_statement(parser, scanner);
+	case TOKEN_VAR: return parse_variable(parser, scanner);
 	}
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
@@ -282,7 +306,7 @@ ParseRule rules[] = {
   [TOKEN_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_IDENTIFIER] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_IDENTIFIER] = {parse_identifier,     NULL,   PREC_NONE},
   [TOKEN_STRING] = {parse_string,     NULL,   PREC_NONE},
   [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},

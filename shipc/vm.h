@@ -7,6 +7,7 @@
 
 #include "value.h"
 #include "chunk.h"
+#include "table.h"
 
 #define STACK_MAX 512
 
@@ -18,6 +19,7 @@ typedef struct {
 	// objects
 	Value stack[STACK_MAX]; // value stack
 	Chunk* chunk;
+	HashMap* globals;
 
 } VM;
 

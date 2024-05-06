@@ -10,7 +10,7 @@ int main() {
 	init_chunk(&chunk);
 
 	const char* source_code =
-		"print(\"Hello\" == \"HelLo\");";
+		"var x = 5; print(x + 5);";
 
 	if (!compile(source_code, &chunk)) {
 		free_chunk(&chunk);

@@ -133,6 +133,7 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="memory.c" />
     <ClCompile Include="objects.c" />
+    <ClCompile Include="table.c" />
     <ClCompile Include="token.c" />
     <ClCompile Include="value.c" />
     <ClCompile Include="vm.c" />
@@ -143,6 +144,7 @@
     <ClInclude Include="debug.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="objects.h" />
+    <ClInclude Include="table.h" />
     <ClInclude Include="token.h" />
     <ClInclude Include="value.h" />
     <ClInclude Include="vm.h" />
