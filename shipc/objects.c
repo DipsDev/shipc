@@ -13,13 +13,12 @@ static void free_string(Obj* str_obj) {
 	StringObj* obj = (StringObj*)str_obj;
 	free(obj->value);
 	free(obj);
-	free(str_obj);
 }
 
 void free_object(Obj* obj) {
 	switch (obj->type) {
 	case OBJ_STRING: return free_string(obj);
-	default: printf("[ERROR] cannot free object, it is not yet supported"); // unreachable
+	default: printf("[ERROR] cannot free object, it is not yet supported."); // unreachable
 	}
 }
 // <------------------------------------>
@@ -93,6 +92,7 @@ StringObj* concat_strings(const char* value1, int length1, const char* value2, i
 		printf("[ERROR] couldn't allocate string object");
 		exit(1);
 	}
+
 	// copy the data to the correct places
 	memcpy(string_value, value1, length1);
 	memcpy(string_value + length1, value2, length2);
@@ -107,7 +107,7 @@ StringObj* concat_strings(const char* value1, int length1, const char* value2, i
 
 	str_obj->value = string_value;
 	str_obj->obj = *object;
-	str_obj->length = (length1 + length2 + 1);
+	str_obj->length = length1 + length2;
 
 	return str_obj;
 
