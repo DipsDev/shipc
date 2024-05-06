@@ -106,11 +106,6 @@ void interpret(VM* vm, Chunk* chunk) {
 					
 					StringObj* concat = concat_strings(str_a->value, str_a->length, str_b->value, str_b->length);
 
-					// free objects in the meanwhile, until we have a garbage collector
-					// free_object(&str_a->obj);
-					// free_object(&str_b->obj);
-
-					// should free str_a and str_b
 					push(vm, VAR_OBJ(concat));
 					break;
 				}
