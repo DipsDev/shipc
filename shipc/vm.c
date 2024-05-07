@@ -233,6 +233,20 @@ void interpret(VM* vm, Chunk* chunk) {
 				push(vm, var_node->value);
 				break;
 			}
+			case OP_CALL: {
+				Value func_name = READ_CONSTANT();
+				if (!IS_STRING(func_name)) {
+					runtime_error("expected function name to be string");
+					exit(1);
+				}
+				StringObj* obj = AS_STRING(func_name);
+				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
+				if (var_node == NULL) {
+					runtime_error("function name '%.*s' is undefined", obj->length, obj->value);
+					exit(1);
+				}
+				break;
+			}
 		}
 	}
 #undef READ_SHORT

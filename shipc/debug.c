@@ -33,8 +33,10 @@ static int variable_instruction(Chunk* chunk, char* op_code, int offset) {
 	}
 	case OBJ_FUNCTION: {
 		FunctionObj* obj = AS_FUNCTION(val);
+		printf("| %04d OP_GLOBAL_STORE %u(%.*s) |\n", offset,index, obj->length, obj->name);
 		printf("=== disassembled function %.*s l(%i) ===\n", obj->length, obj->name, obj->body.count);
 		for (int i = 0; i < obj->body.count;) {
+			printf("\t");
 			i += disassemble_instruction(&obj->body, i);
 		}
 		printf("=== function ===\n");
