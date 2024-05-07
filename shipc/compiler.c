@@ -217,8 +217,9 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 
 
 	// add a constant so we later can change it
-	uint8_t jmp_index = add_constant(parser->currentChunk, VAR_NUMBER(0));
-	write_bytes(parser->currentChunk, OP_POP_JUMP_IF_FALSE, jmp_index);
+	write_chunk(parser->currentChunk, OP_POP_JUMP_IF_FALSE);
+	int offset = parser->currentChunk->count;
+	write_bytes(parser->currentChunk, 0xff, 0xff);
 
 	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected { after if expression at"); // expect open block after boolean expression
 	while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
@@ -231,7 +232,13 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	// calculate the new size of the body, and modify the jmp size
 	int after_body = parser->currentChunk->count;
 	int body_size = after_body - before_body - 2; // subtract 2 because the if and the value
-	change_constant(parser->currentChunk, jmp_index, VAR_NUMBER(body_size));
+	if (body_size > UINT16_MAX) {
+		error(parser, "max jump length exceeded");
+	}
+
+	// set the new size
+	parser->currentChunk->codes[offset] = (body_size >> 8) & 0xff;
+	parser->currentChunk->codes[offset + 1] = body_size & 0xff;
 }
 
 static void parse_variable(Parser* parser, Scanner* scanner) {

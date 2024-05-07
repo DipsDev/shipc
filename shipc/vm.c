@@ -47,6 +47,8 @@ void free_vm(VM* vm) {
 void interpret(VM* vm, Chunk* chunk) {
 #define READ_BYTE() *vm->ip++
 #define READ_CONSTANT() chunk->constants.arr[READ_BYTE()]
+#define READ_SHORT() \
+	(vm->ip += 2, (uint16_t) ((vm->ip[-2] << 8) | vm->ip[-1]))
 
 
 	vm->chunk = chunk;
@@ -172,12 +174,12 @@ void interpret(VM* vm, Chunk* chunk) {
 				Value cond = pop(vm);
 				// if condition is truthy, then don't jump
 				if (is_truthy(cond)) {
-					(void) READ_BYTE(); // the byte after the op is the jmp size, so avoid reading it
+					(void) READ_SHORT(); // the byte after the op is the jmp size, so avoid reading it
 					break;
 				}
 				// if condition is false, jump
-				Value jmp_size = READ_CONSTANT();
-				vm->ip += (int) AS_NUMBER(jmp_size);
+				uint16_t jmp_size = READ_SHORT();
+				vm->ip += (int) jmp_size;
 				break;
 
 			}
@@ -205,6 +207,7 @@ void interpret(VM* vm, Chunk* chunk) {
 			}
 		}
 	}
+#undef READ_SHORT
 #undef READ_BYTE
 #undef READ_CONSTANT
 }
