@@ -3,6 +3,7 @@
 #define SHIP_OBJECTS_H
 
 #include "value.h"
+#include "chunk.h"
 
 /// Object Types
 typedef struct {
@@ -10,6 +11,13 @@ typedef struct {
 	char* value;
 	int length;
 } StringObj;
+
+typedef struct {
+	Obj obj;
+	char* name;
+	int length;
+	Chunk body;
+} FunctionObj;
 /// 
 
 StringObj* create_string_obj(const char* value, int length);
