@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "vm.h"
 #include "objects.h"
@@ -26,7 +27,11 @@ static Value pop(VM* vm) {
 }
 
 static void runtime_error(const char* message, ...) {
-	printf("[ERROR] Encountered runtime error: %s", message);
+	va_list args;
+	va_start(args, message);
+	printf("[ERROR] Encountered runtime error: ");
+	vprintf(message, args);
+	va_end(args);
 }
 
 void init_vm(VM* vm) {
@@ -207,7 +212,7 @@ void interpret(VM* vm, Chunk* chunk) {
 				StringObj* obj = AS_STRING(variable_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					runtime_error("variable name is undefined");
+					runtime_error("variable name '%.*s' is undefined", obj->length, obj->value);
 					exit(1);
 				}
 				var_node->value = var_value;
@@ -222,7 +227,7 @@ void interpret(VM* vm, Chunk* chunk) {
 				StringObj* obj = AS_STRING(variable_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					runtime_error("variable name is undefined");
+					runtime_error("variable name '%.*s' is undefined", obj->length, obj->value);
 					exit(1);
 				}
 				push(vm, var_node->value);
