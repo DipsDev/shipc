@@ -59,6 +59,7 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 		case OP_NOT: return simple_instruction("OP_NOT", offset);
 		case OP_TRUE: return simple_instruction("OP_TRUE", offset);
 		case OP_NIL:return simple_instruction("OP_NIL", offset);
+		case OP_ASSIGN_GLOBAL: return variable_instruction(chunk, "OP_ASSIGN_GLOBAL", offset);
 		case OP_STORE_GLOBAL: return variable_instruction(chunk, "OP_STORE_GLOBAL", offset);
 		case OP_LOAD_GLOBAL: return variable_instruction(chunk, "OP_LOAD_GLOBAL", offset);
 		case OP_POP_JUMP_IF_FALSE: return jump_instruction(chunk, offset);

@@ -195,6 +195,24 @@ void interpret(VM* vm, Chunk* chunk) {
 				put_node(vm->globals, obj->value, obj->length, var_value);
 				break;
 			}
+			case OP_ASSIGN_GLOBAL: {
+				Value var_value = pop(vm);
+				Value variable_name = READ_CONSTANT();
+
+				if (!IS_STRING(variable_name)) {
+					runtime_error("expected variable name to be string");
+					exit(1);
+				}
+				
+				StringObj* obj = AS_STRING(variable_name);
+				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
+				if (var_node == NULL) {
+					runtime_error("variable name is undefined");
+					exit(1);
+				}
+				var_node->value = var_value;
+				break;
+			}
 			case OP_LOAD_GLOBAL: {
 				Value variable_name = READ_CONSTANT();
 				if (!IS_STRING(variable_name)) {

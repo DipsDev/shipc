@@ -264,10 +264,21 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
 }
 
 
-static void parse_var_declare(Parser* parser, Scanner* scanner) {
-	if (parser->current.type == TOKEN_EQUAL) {
+static void parse_var_assignment(Parser* parser, Scanner* scanner) {
+	if (parser->current.type != TOKEN_EQUAL) {
 		return parse_identifier(parser, scanner);
 	}
+	write_chunk(parser->currentChunk, OP_NIL);
+	Token variable_ident = parser->previous;
+	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
+
+	parse_precedence(parser, scanner, PREC_CALL); // parse the expression value
+
+	//// create the string object
+	StringObj* obj = create_string_obj(variable_ident.start, variable_ident.length);
+	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
+	write_bytes(parser->currentChunk, OP_ASSIGN_GLOBAL, index);
+
 }
 
 
@@ -320,7 +331,7 @@ ParseRule rules[] = {
   [TOKEN_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_IDENTIFIER] = {parse_var_declare,     parse_identifier,   PREC_NONE},
+  [TOKEN_IDENTIFIER] = {parse_var_assignment,     NULL,   PREC_NONE},
   [TOKEN_STRING] = {parse_string,     NULL,   PREC_NONE},
   [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},
