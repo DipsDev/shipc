@@ -212,12 +212,10 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	// parse the bool expr
 	parse_expression(parser, scanner); 
 
-	// save the loc before the body, so we can jump after the body if evals to false
-	int before_body = parser->currentChunk->count;
-
-
-	// add a constant so we later can change it
+	// add a temp value
 	write_chunk(parser->currentChunk, OP_POP_JUMP_IF_FALSE);
+
+	// save the value before the body
 	int offset = parser->currentChunk->count;
 	write_bytes(parser->currentChunk, 0xff, 0xff);
 
@@ -231,7 +229,7 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 
 	// calculate the new size of the body, and modify the jmp size
 	int after_body = parser->currentChunk->count;
-	int body_size = after_body - before_body - 2; // subtract 2 because the if and the value
+	int body_size = after_body - offset - 2; // subtract 2 because the if and the value
 	if (body_size > UINT16_MAX) {
 		error(parser, "max jump length exceeded");
 	}

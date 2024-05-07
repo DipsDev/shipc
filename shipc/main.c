@@ -10,7 +10,7 @@ int main() {
 	init_chunk(&chunk);
 
 	const char* source_code =
-		"var x = nil; print(13); if x == nil { print(14); }";
+		"var x = 5; print(13); if x == nil { print(25 * x); }";
 
 	if (!compile(source_code, &chunk)) {
 		free_chunk(&chunk);
