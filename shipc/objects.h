@@ -23,6 +23,8 @@ typedef struct {
 StringObj* create_string_obj(const char* value, int length);
 StringObj* concat_strings(const char* value1, int length1, const char* value2, int length2);
 
+FunctionObj* create_func_obj(const char* value, int length, Chunk body);
+
 
 void free_object(Obj* obj);
 bool compare_objects(Obj* obj1, Obj* obj2);

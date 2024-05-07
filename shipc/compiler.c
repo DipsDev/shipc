@@ -263,6 +263,34 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
 	write_bytes(parser->currentChunk, OP_LOAD_GLOBAL, index);
 }
 
+static void parse_func_statement(Parser* parser, Scanner* scanner) {
+	advance(scanner, parser); // eat the fn keyword
+	expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier at");
+	Token func_tkn = parser->previous;
+	expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration at");
+	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed ) in function declaration in"); // no params currently
+	
+
+	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected open block in function declaration"); // eat the {
+
+	// create new chunk for func body
+	Chunk body;
+	init_chunk(&body);
+	Chunk* temp_save = parser->currentChunk;
+	parser->currentChunk = &body;
+	while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
+		parse_statement(parser, scanner);
+	}
+	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block at function declaration at");
+	parser->currentChunk = temp_save;
+
+	// create the func object
+	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length, body);
+	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
+	write_bytes(parser->currentChunk, OP_STORE_GLOBAL, index);
+
+}
+
 
 static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 	if (parser->current.type != TOKEN_EQUAL) {
@@ -289,6 +317,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
 	case TOKEN_IF: return parse_if_statement(parser, scanner);
 	case TOKEN_PRINT: return parse_debug_statement(parser, scanner);
 	case TOKEN_VAR: return parse_variable(parser, scanner);
+	case TOKEN_FN: return parse_func_statement(parser, scanner);
 	}
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");

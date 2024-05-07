@@ -84,6 +84,25 @@ StringObj* create_string_obj(const char* value, int length) {
 	return str_obj;
 }
 
+FunctionObj* create_func_obj(const char* value, int length, Chunk body) {
+	// create the required arguements
+	char* string_value = copy_string(value, length);
+	Obj* object = allocate_object(OBJ_STRING);
+	FunctionObj* func_obj = (FunctionObj*)malloc(sizeof(FunctionObj));
+	if (func_obj == NULL) {
+		printf("[ERROR] couldn't allocate string object");
+		exit(1);
+	}
+
+	// set the values
+	func_obj->name = string_value;
+	func_obj->obj = *object;
+	func_obj->body = body;
+	func_obj->length = length;
+
+	return func_obj;
+}
+
 
 StringObj* concat_strings(const char* value1, int length1, const char* value2, int length2) {
 	// create the required strings
