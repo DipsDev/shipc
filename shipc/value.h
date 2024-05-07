@@ -20,13 +20,6 @@ typedef struct {
 	ObjType type;
 } Obj;
 
-/// Object Types
-typedef struct {
-	Obj obj;
-	char* value;
-	int length;
-} StringObj;
-/// 
 
 typedef struct {
 	ValueType type;

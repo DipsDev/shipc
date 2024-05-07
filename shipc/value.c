@@ -2,6 +2,7 @@
 
 #include "memory.h"
 #include "value.h"
+#include "objects.h"
 
 bool is_truthy(Value val) {
 	if (IS_NUMBER(val)) {

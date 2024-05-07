@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "objects.h"
 
 
 static int simple_instruction(const char* string, int offset) {
