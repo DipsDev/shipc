@@ -37,6 +37,7 @@ static int variable_instruction(Chunk* chunk, char* op_code, int offset) {
 		for (int i = 0; i < obj->body.count;) {
 			i += disassemble_instruction(&obj->body, i);
 		}
+		printf("=== function ===\n");
 		break;
 	}
 
