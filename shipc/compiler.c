@@ -256,11 +256,20 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 	write_bytes(parser->currentChunk, OP_STORE_GLOBAL, index);
 }
 
+
 static void parse_identifier(Parser* parser, Scanner* scanner) {
 	StringObj* obj = create_string_obj(parser->previous.start, parser->previous.length);
 	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
 	write_bytes(parser->currentChunk, OP_LOAD_GLOBAL, index);
 }
+
+
+static void parse_var_declare(Parser* parser, Scanner* scanner) {
+	if (parser->current.type == TOKEN_EQUAL) {
+		return parse_identifier(parser, scanner);
+	}
+}
+
 
 static void parse_statement(Parser* parser, Scanner* scanner) {
 	// parse statements that do not return anything
@@ -311,7 +320,7 @@ ParseRule rules[] = {
   [TOKEN_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_IDENTIFIER] = {parse_identifier,     NULL,   PREC_NONE},
+  [TOKEN_IDENTIFIER] = {parse_var_declare,     parse_identifier,   PREC_NONE},
   [TOKEN_STRING] = {parse_string,     NULL,   PREC_NONE},
   [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},

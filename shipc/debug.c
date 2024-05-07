@@ -43,7 +43,7 @@ static int jump_instruction(Chunk* chunk, int offset) {
 	uint8_t d1 = chunk->codes[offset + 1];
 	uint8_t d2 = chunk->codes[offset + 2];
 	printf("| %04d OP_JUMP (%u) |\n", offset, (((uint16_t)d1 << 8) | d2));
-	return 2;
+	return 3;
 }
 
 static int disassemble_instruction(Chunk* chunk, int offset) {

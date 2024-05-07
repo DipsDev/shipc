@@ -84,7 +84,11 @@ void put_node(HashMap* map,char* name,int name_len, Value val) {
 
 HashNode* get_node(HashMap* map, char* name, int name_len) {
 	unsigned index = hash_function(name, name_len) & (map->capacity - 1); // calculate the index
-	return map->arr[index];
+	HashNode* pos = map->arr[index];
+	while (pos != NULL && strcmp(name, pos->name) != 0) {
+		pos = pos->next;
+	}
+	return pos;
 }
 
 void free_hash_map(HashMap* map) {

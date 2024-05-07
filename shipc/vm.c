@@ -202,7 +202,12 @@ void interpret(VM* vm, Chunk* chunk) {
 					exit(1);
 				}
 				StringObj* obj = AS_STRING(variable_name);
-				push(vm, get_node(vm->globals, obj->value, obj->length)->value);
+				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
+				if (var_node == NULL) {
+					runtime_error("variable name is undefined");
+					exit(1);
+				}
+				push(vm, var_node->value);
 				break;
 			}
 		}
