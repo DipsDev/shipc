@@ -14,6 +14,7 @@ typedef enum {
 
 typedef enum {
 	OBJ_STRING,
+	OBJ_FUNCTION,
 } ObjType;
 
 typedef struct {
@@ -51,6 +52,7 @@ bool is_truthy(Value val);
 
 
 #define AS_STRING(obj) ((StringObj*) AS_OBJ(obj))
+#define AS_FUNCTION(obj) ((FunctionObj*) AS_OBJ(obj))
 
 
 // create a tagged union

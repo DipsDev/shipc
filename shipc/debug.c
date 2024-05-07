@@ -4,6 +4,8 @@
 #include "objects.h"
 
 
+void disassemble_chunk(Chunk* chunk);
+
 static int simple_instruction(const char* string, int offset) {
 	printf("| %04d  %s  |\n", offset, string);
 	return 1;
@@ -23,8 +25,23 @@ static void print_obj(Chunk* chunk, Value val, int offset) {
 static int variable_instruction(Chunk* chunk, char* op_code, int offset) {
 	uint8_t index = chunk->codes[offset + 1];
 	Value val = chunk->constants.arr[index];
-	StringObj* obj = AS_STRING(val);
-	printf("| %04d %s %u (%.*s) |\n", offset, op_code, index, obj->length, obj->value);
+	switch (AS_OBJ(val)->type) {
+	case OBJ_STRING: {
+		StringObj* obj = AS_STRING(val);
+		printf("| %04d %s %u (%.*s) |\n", offset, op_code, index, obj->length, obj->value);
+		break;
+	}
+	case OBJ_FUNCTION: {
+		FunctionObj* obj = AS_FUNCTION(val);
+		printf("=== disassembled function %.*s l(%i) ===\n", obj->length, obj->name, obj->body.count);
+		for (int i = 0; i < obj->body.count;) {
+			i += disassemble_instruction(&obj->body, i);
+		}
+		break;
+	}
+
+	}
+
 	return 2;
 }
 
