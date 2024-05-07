@@ -245,7 +245,8 @@ void interpret(VM* vm, Chunk* chunk) {
 					runtime_error("function '%.*s' is undefined", obj->length, obj->value);
 					exit(1);
 				}
-				break;
+				FunctionObj* func = AS_FUNCTION(var_node->value);
+				// TODO: Implement the function running
 			}
 		}
 	}

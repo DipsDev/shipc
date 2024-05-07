@@ -268,6 +268,7 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
 	}
 	write_chunk(parser->currentChunk, OP_NIL);
 	advance(scanner, parser); // eat the (
+	// TODO: Add option to add arguments
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed argument list of a function at"); // eat the ) => no arguments for now
 	write_bytes(parser->currentChunk, OP_CALL, index);
 
@@ -279,6 +280,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier at");
 	Token func_tkn = parser->previous;
 	expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration at");
+	// TODO: Add calling with arguments
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed ) in function declaration in"); // no params currently
 	
 
