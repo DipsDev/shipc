@@ -11,6 +11,7 @@ typedef enum { // available op codes
 	OP_POP_TOP,
 	OP_FALSE,
 	OP_TRUE,
+	OP_CALL,
 	OP_NIL,
 	OP_ADD,
 	OP_SUB,

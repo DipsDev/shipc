@@ -258,9 +258,19 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 
 
 static void parse_identifier(Parser* parser, Scanner* scanner) {
+	// add the ident string to the pool so we can either call or load it
 	StringObj* obj = create_string_obj(parser->previous.start, parser->previous.length);
 	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
-	write_bytes(parser->currentChunk, OP_LOAD_GLOBAL, index);
+
+	if (parser->current.type != TOKEN_LEFT_PAREN) {
+		write_bytes(parser->currentChunk, OP_LOAD_GLOBAL, index);
+		return;
+	}
+	advance(scanner, parser); // eat the (
+	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed argument list of a function at"); // eat the ) => no arguments for now
+	write_bytes(parser->currentChunk, OP_CALL, index);
+
+	
 }
 
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
