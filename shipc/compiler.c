@@ -247,8 +247,8 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 	advance(scanner, parser);
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 
-	parse_precedence(parser, scanner, PREC_CALL); // parse the expression value
-	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
+	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
+	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; ats");
 	
 	// create the string object
 	StringObj* obj = create_string_obj(variable_ident.start, variable_ident.length);
@@ -272,7 +272,7 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 	Token variable_ident = parser->previous;
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 
-	parse_precedence(parser, scanner, PREC_CALL); // parse the expression value
+	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 
 	//// create the string object
 	StringObj* obj = create_string_obj(variable_ident.start, variable_ident.length);

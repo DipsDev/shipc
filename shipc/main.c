@@ -10,7 +10,7 @@ int main() {
 	init_chunk(&chunk);
 
 	const char* source_code =
-		"\"HelloWorld\" / 54;";
+		"var x = 100 * 2 / 8; x = x * 4; print(x);";
 
 	if (!compile(source_code, &chunk)) {
 		free_chunk(&chunk);
