@@ -227,7 +227,7 @@ void interpret(VM* vm, Chunk* chunk) {
 				StringObj* obj = AS_STRING(variable_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					runtime_error("variable name '%.*s' is undefined", obj->length, obj->value);
+					runtime_error("variable '%.*s' is undefined", obj->length, obj->value);
 					exit(1);
 				}
 				push(vm, var_node->value);
@@ -242,7 +242,7 @@ void interpret(VM* vm, Chunk* chunk) {
 				StringObj* obj = AS_STRING(func_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					runtime_error("function name '%.*s' is undefined", obj->length, obj->value);
+					runtime_error("function '%.*s' is undefined", obj->length, obj->value);
 					exit(1);
 				}
 				break;

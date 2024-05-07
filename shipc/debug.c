@@ -19,6 +19,17 @@ static void print_obj(Chunk* chunk, Value val, int offset) {
 			printf("| %04d OP_CONSTANT %u (%.*s) |\n", offset, i,obj->length, obj->value);
 			break;
 		}
+		case OBJ_FUNCTION: {
+			FunctionObj* obj = AS_FUNCTION(val);
+			printf("| %04d OP_GLOBAL_STORE %u(%.*s) |\n", offset, i, obj->length, obj->name);
+			printf("=== disassembled function %.*s l(%i) ===\n", obj->length, obj->name, obj->body.count);
+			for (int j = 0; j < obj->body.count;) {
+				printf("\t");
+				j += disassemble_instruction(&obj->body, j);
+			}
+			printf("=== function ===\n");
+			break;
+		}
 	}
 }
 
@@ -29,17 +40,6 @@ static int variable_instruction(Chunk* chunk, char* op_code, int offset) {
 	case OBJ_STRING: {
 		StringObj* obj = AS_STRING(val);
 		printf("| %04d %s %u (%.*s) |\n", offset, op_code, index, obj->length, obj->value);
-		break;
-	}
-	case OBJ_FUNCTION: {
-		FunctionObj* obj = AS_FUNCTION(val);
-		printf("| %04d OP_GLOBAL_STORE %u(%.*s) |\n", offset,index, obj->length, obj->name);
-		printf("=== disassembled function %.*s l(%i) ===\n", obj->length, obj->name, obj->body.count);
-		for (int i = 0; i < obj->body.count;) {
-			printf("\t");
-			i += disassemble_instruction(&obj->body, i);
-		}
-		printf("=== function ===\n");
 		break;
 	}
 

@@ -266,6 +266,7 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
 		write_bytes(parser->currentChunk, OP_LOAD_GLOBAL, index);
 		return;
 	}
+	write_chunk(parser->currentChunk, OP_NIL);
 	advance(scanner, parser); // eat the (
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed argument list of a function at"); // eat the ) => no arguments for now
 	write_bytes(parser->currentChunk, OP_CALL, index);
@@ -297,7 +298,13 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	// create the func object
 	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length, body);
 	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
-	write_bytes(parser->currentChunk, OP_STORE_GLOBAL, index);
+	write_bytes(parser->currentChunk, OP_CONSTANT, index);
+
+
+	// create the string object
+	StringObj* func_str = create_string_obj(func_tkn.start, func_tkn.length);
+	uint8_t str_index = add_constant(parser->currentChunk, VAR_OBJ(func_str));
+	write_bytes(parser->currentChunk, OP_STORE_GLOBAL, str_index);
 
 }
 
