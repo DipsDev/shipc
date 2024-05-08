@@ -1,6 +1,6 @@
 #pragma once
-#ifndef SHIP_OBJECTS_H
-#define SHIP_OBJECTS_H
+#ifndef SHIP_OBJECTS_H_
+#define SHIP_OBJECTS_H_
 
 #include "value.h"
 #include "chunk.h"
@@ -28,7 +28,7 @@ FunctionObj* create_func_obj(const char* value, int length);
 void free_object(Obj* obj);
 bool compare_objects(Obj* obj1, Obj* obj2);
 
-#endif // !SHIP_OBJECTS_H
+#endif // !SHIP_OBJECTS_H_
 
 
 
