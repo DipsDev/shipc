@@ -245,6 +245,10 @@ void interpret(VM* vm, FunctionObj* func) {
 					runtime_error("function '%.*s' is undefined", obj->length, obj->value);
 					exit(1);
 				}
+				if (!IS_FUNCTION(var_node->value)) {
+					runtime_error("object '%.*s' is not callable.", obj->length, obj->value);
+					exit(1);
+				}
 				FunctionObj* func = AS_FUNCTION(var_node->value);
 				// TODO: Implement the function running
 			}

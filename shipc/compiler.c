@@ -305,7 +305,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	write_bytes(current_chunk(parser), OP_CONSTANT, index);
 
 	// register the function name
-	uint8_t name_index = add_constant(current_chunk(parser), VAR_OBJ(obj->name));
+	uint8_t name_index = add_constant(current_chunk(parser), VAR_OBJ((obj->name)));
 	write_bytes(current_chunk(parser), OP_STORE_GLOBAL, name_index);
 
 

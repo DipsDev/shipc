@@ -73,6 +73,7 @@ static inline bool test_obj_types(Value value, ObjType type) {
 }
 
 #define IS_STRING(value) (test_obj_types(value, OBJ_STRING))
+#define IS_FUNCTION(value) (test_obj_types(value, OBJ_FUNCTION))
 
 #endif // !SHIP_VALUE_H_
 
