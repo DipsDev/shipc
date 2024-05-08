@@ -290,7 +290,25 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 
 	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected open block in function declaration"); // eat the {
 
-	// TODO: Create new chunk for func body
+
+	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length);
+	FunctionObj* before_func = parser->func;
+	parser->func = obj;
+	while (parser->previous.type != TOKEN_EOF && parser->previous.type != TOKEN_RIGHT_BRACE) {
+		parse_statement(parser, scanner);
+	}
+	parser->func = before_func;
+	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block in function declaration"); // eat the }
+
+	// Add function constant
+	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
+	write_bytes(current_chunk(parser), OP_CONSTANT, index);
+
+	// register the function name
+	uint8_t name_index = add_constant(current_chunk(parser), VAR_OBJ(obj->name));
+	write_bytes(current_chunk(parser), OP_STORE_GLOBAL, name_index);
+
+
 
 }
 
