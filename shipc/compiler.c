@@ -399,7 +399,6 @@ FunctionObj* compile(const char* source) {
 	while (parser.current.type != TOKEN_EOF) {
 		parse_statement(&parser, &scanner);
 	}
-
 	// clean ups
 	end_compile(&parser, &scanner); // end compilation
 

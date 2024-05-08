@@ -5,7 +5,7 @@
 #include "chunk.h"
 #include "compiler.h"
 
-void disassemble_chunk(Chunk* chunk);
+void disassemble_func(FunctionObj* obj);
 
 
 #endif // !SHIP_DEBUG_H_

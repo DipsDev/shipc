@@ -3,9 +3,6 @@
 #include "debug.h"
 #include "objects.h"
 
-
-void disassemble_chunk(Chunk* chunk);
-
 static int simple_instruction(const char* string, int offset) {
 	printf("| %04d  %s  |\n", offset, string);
 	return 1;
@@ -101,9 +98,9 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 	}
 }
 
-void disassemble_chunk(Chunk* chunk) {
-	printf("=== disassembled chunk l(%i) ===\n", chunk->count);
-	for (int i = 0; i < chunk->count;) {
-		i += disassemble_instruction(chunk, i);
+void disassemble_func(FunctionObj* obj) {
+	printf("=== disassembled main script l(%i) ===\n", obj->body.count);
+	for (int i = 0; i < obj->body.count;) {
+		i += disassemble_instruction(&obj->body, i);
 	}
 }

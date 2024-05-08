@@ -7,14 +7,13 @@
 
 int main() {
 	const char* source_code =
-		"var x = 15; print(x);";
+		"var y = 14; var x = 13; print(x * y + y - x);";
 
 	FunctionObj* compiled_func = compile(source_code);
 	if (compiled_func == NULL) {
 		exit(1);
 	}
-
-	disassemble_chunk(&compiled_func->body);
+	disassemble_func(compiled_func);
 
 	VM vm;
 	init_vm(&vm);
