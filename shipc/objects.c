@@ -15,9 +15,23 @@ static void free_string(Obj* str_obj) {
 	free(obj);
 }
 
+static void free_function(Obj* func_obj) {
+	if (func_obj->type != OBJ_STRING) {
+		printf("[ERROR] free_string is supposed to receive only string objects");
+		exit(1);
+	}
+	FunctionObj* obj = (FunctionObj*)func_obj;
+
+	free_string(obj->name);
+	free_chunk(&obj->body);
+	free(func_obj);
+
+}
+
 void free_object(Obj* obj) {
 	switch (obj->type) {
 	case OBJ_STRING: return free_string(obj);
+	case OBJ_FUNCTION: return free_function(obj);
 	default: printf("[ERROR] cannot free object, it is not yet supported."); // unreachable
 	}
 }
@@ -84,9 +98,9 @@ StringObj* create_string_obj(const char* value, int length) {
 	return str_obj;
 }
 
-FunctionObj* create_func_obj(const char* value, int length, Chunk body) {
+FunctionObj* create_func_obj(const char* value, int length) {
 	// create the required arguements
-	char* string_value = copy_string(value, length);
+	StringObj* name = create_string_obj(value, length);
 	Obj* object = allocate_object(OBJ_FUNCTION);
 	FunctionObj* func_obj = (FunctionObj*)malloc(sizeof(FunctionObj));
 	if (func_obj == NULL) {
@@ -95,10 +109,13 @@ FunctionObj* create_func_obj(const char* value, int length, Chunk body) {
 	}
 
 	// set the values
-	func_obj->name = string_value;
+	func_obj->name = name;
 	func_obj->obj = *object;
+
+	Chunk body;
+	init_chunk(&body);
 	func_obj->body = body;
-	func_obj->length = length;
+
 
 	return func_obj;
 }

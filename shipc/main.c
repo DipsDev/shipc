@@ -6,24 +6,19 @@
 
 
 int main() {
-	Chunk chunk;
-	init_chunk(&chunk);
-
 	const char* source_code =
-		"fn hello_world() { print(15); } hello_world();";
+		"var x = 15;";
 
-	if (!compile(source_code, &chunk)) {
-		free_chunk(&chunk);
+	FunctionObj* compiled_func = compile(source_code);
+	if (compiled_func == NULL) {
 		exit(1);
 	}
-	disassemble_chunk(&chunk);
 
 	VM vm;
 	init_vm(&vm);
-	interpret(&vm, &chunk);
+	interpret(&vm, compiled_func);
 
 	free_vm(&vm);
-	free_chunk(&chunk);
 
 
 

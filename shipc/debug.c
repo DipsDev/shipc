@@ -21,8 +21,7 @@ static void print_obj(Chunk* chunk, Value val, int offset) {
 		}
 		case OBJ_FUNCTION: {
 			FunctionObj* obj = AS_FUNCTION(val);
-			printf("| %04d OP_GLOBAL_STORE %u(%.*s) |\n", offset, i, obj->length, obj->name);
-			printf("=== disassembled function %.*s l(%i) ===\n", obj->length, obj->name, obj->body.count);
+			printf("=== disassembled function %.*s l(%i) ===\n", obj->name->length, obj->name->value, obj->body.count);
 			for (int j = 0; j < obj->body.count;) {
 				printf("\t");
 				j += disassemble_instruction(&obj->body, j);

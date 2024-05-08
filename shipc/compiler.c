@@ -15,11 +15,15 @@ typedef struct {
 	Token current;
 	Token previous;
 
-	Chunk* currentChunk;
+	FunctionObj* func;
 
 	bool hadError;
 	bool panicMode;
 } Parser;
+
+static Chunk* current_chunk(Parser* parser) {
+	return &parser->func->body;
+}
 
 
 // Precedence utils
@@ -74,11 +78,11 @@ static void error_at_current(Parser* parser) {
 ////
 
 
-static void init_parser(Parser* parser, Chunk* chunk) {
+static void init_parser(Parser* parser) {
 	parser->hadError = false;
 	parser->panicMode = false;
 
-	parser->currentChunk = chunk;
+	parser->func = create_func_obj("main", 4);
 }
 
 static void advance(Scanner* scanner, Parser* parser) {
@@ -122,8 +126,8 @@ static void parse_precedence(Parser* parser, Scanner* scanner, Precedence precen
 
 static void parse_number(Parser* parser, Scanner* scanner) {
 	double value = strtod(parser->previous.start, NULL);
-	uint8_t index = add_constant(parser->currentChunk, VAR_NUMBER(value));
-	write_bytes(parser->currentChunk, OP_CONSTANT, index);
+	uint8_t index = add_constant(current_chunk(parser), VAR_NUMBER(value));
+	write_bytes(current_chunk(parser), OP_CONSTANT, index);
 }
 
 static void parse_grouping(Parser* parser, Scanner* scanner, const char *message) {
@@ -139,10 +143,10 @@ static void parse_boolean(Parser* parser, Scanner* scanner) {
 	TokenType op = parser->previous.type;
 	parse_precedence(parser, scanner, (Precedence)(get_rule(op)->precedence + 1));
 	switch (op) {
-	case TOKEN_EQUAL_EQUAL: write_chunk(parser->currentChunk, OP_COMPARE); break;
+	case TOKEN_EQUAL_EQUAL: write_chunk(current_chunk(parser), OP_COMPARE); break;
 	case TOKEN_BANG_EQUAL: {
-		write_chunk(parser->currentChunk, OP_COMPARE);
-		write_chunk(parser->currentChunk, OP_NOT);
+		write_chunk(current_chunk(parser), OP_COMPARE);
+		write_chunk(current_chunk(parser), OP_NOT);
 		break;
 	}
 	}
@@ -159,8 +163,8 @@ static void parse_unary(Parser* parser, Scanner* scanner) {
 
 	// Emit the operator instruction.
 	switch (operatorType) {
-	case TOKEN_MINUS: write_chunk(parser->currentChunk, OP_NEGATE); break;
-	case TOKEN_BANG: write_chunk(parser->currentChunk, OP_NOT); break;
+	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_NEGATE); break;
+	case TOKEN_BANG: write_chunk(current_chunk(parser), OP_NOT); break;
 	default: return; // Unreachable.
 	}
 }
@@ -171,8 +175,8 @@ static void parse_string(Parser* parser, Scanner* scanner) {
 
 	// create the string object
 	StringObj* obj = create_string_obj(str, length);
-	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
-	write_bytes(parser->currentChunk, OP_CONSTANT, index);
+	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
+	write_bytes(current_chunk(parser), OP_CONSTANT, index);
 
 }
 
@@ -181,10 +185,10 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 	parse_precedence(parser, scanner, (Precedence)(get_rule(op)->precedence + 1));
 
 	switch (op) {
-	case TOKEN_PLUS: write_chunk(parser->currentChunk, OP_ADD); break;
-	case TOKEN_MINUS: write_chunk(parser->currentChunk, OP_SUB); break;
-	case TOKEN_STAR: write_chunk(parser->currentChunk, OP_MUL); break;
-	case TOKEN_SLASH: write_chunk(parser->currentChunk, OP_DIV); break;
+	case TOKEN_PLUS: write_chunk(current_chunk(parser), OP_ADD); break;
+	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_SUB); break;
+	case TOKEN_STAR: write_chunk(current_chunk(parser), OP_MUL); break;
+	case TOKEN_SLASH: write_chunk(current_chunk(parser), OP_DIV); break;
 	}
 }
 
@@ -193,9 +197,9 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 
 static void parse_literal(Parser* parser, Scanner* scanner) {
 	switch (parser->previous.type) {
-	case TOKEN_FALSE: write_chunk(parser->currentChunk, OP_FALSE); break;
-	case TOKEN_TRUE: write_chunk(parser->currentChunk, OP_TRUE); break;
-	case TOKEN_NIL: write_chunk(parser->currentChunk, OP_NIL); break;
+	case TOKEN_FALSE: write_chunk(current_chunk(parser), OP_FALSE); break;
+	case TOKEN_TRUE: write_chunk(current_chunk(parser), OP_TRUE); break;
+	case TOKEN_NIL: write_chunk(current_chunk(parser), OP_NIL); break;
 	}
 }
 
@@ -213,11 +217,11 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	parse_expression(parser, scanner); 
 
 	// add a temp value
-	write_chunk(parser->currentChunk, OP_POP_JUMP_IF_FALSE);
+	write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE);
 
 	// save the value before the body
-	int offset = parser->currentChunk->count;
-	write_bytes(parser->currentChunk, 0xff, 0xff);
+	int offset = current_chunk(parser)->count;
+	write_bytes(current_chunk(parser), 0xff, 0xff);
 
 	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected { after if expression at"); // expect open block after boolean expression
 	while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
@@ -228,15 +232,15 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	expect(scanner, parser, TOKEN_RIGHT_BRACE, "expected } after open block at");
 
 	// calculate the new size of the body, and modify the jmp size
-	int after_body = parser->currentChunk->count;
+	int after_body = current_chunk(parser)->count;
 	int body_size = after_body - offset - 2; // subtract 2 because the if and the value
 	if (body_size > UINT16_MAX) {
 		error(parser, "max jump length exceeded");
 	}
 
 	// set the new size
-	parser->currentChunk->codes[offset] = (body_size >> 8) & 0xff;
-	parser->currentChunk->codes[offset + 1] = body_size & 0xff;
+	current_chunk(parser)->codes[offset] = (body_size >> 8) & 0xff;
+	current_chunk(parser)->codes[offset + 1] = body_size & 0xff;
 }
 
 static void parse_variable(Parser* parser, Scanner* scanner) {
@@ -252,25 +256,25 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 	
 	// create the string object
 	StringObj* obj = create_string_obj(variable_ident.start, variable_ident.length);
-	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
-	write_bytes(parser->currentChunk, OP_STORE_GLOBAL, index);
+	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
+	write_bytes(current_chunk(parser), OP_STORE_GLOBAL, index);
 }
 
 
 static void parse_identifier(Parser* parser, Scanner* scanner) {
 	// add the ident string to the pool so we can either call or load it
 	StringObj* obj = create_string_obj(parser->previous.start, parser->previous.length);
-	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
+	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
 
 	if (parser->current.type != TOKEN_LEFT_PAREN) {
-		write_bytes(parser->currentChunk, OP_LOAD_GLOBAL, index);
+		write_bytes(current_chunk(parser), OP_LOAD_GLOBAL, index);
 		return;
 	}
-	write_chunk(parser->currentChunk, OP_NIL);
+	write_chunk(current_chunk(parser), OP_NIL);
 	advance(scanner, parser); // eat the (
 	// TODO: Add option to add arguments
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed argument list of a function at"); // eat the ) => no arguments for now
-	write_bytes(parser->currentChunk, OP_CALL, index);
+	write_bytes(current_chunk(parser), OP_CALL, index);
 
 	
 }
@@ -286,27 +290,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 
 	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected open block in function declaration"); // eat the {
 
-	// create new chunk for func body
-	Chunk body;
-	init_chunk(&body);
-	Chunk* temp_save = parser->currentChunk;
-	parser->currentChunk = &body;
-	while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
-		parse_statement(parser, scanner);
-	}
-	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block at function declaration at");
-	parser->currentChunk = temp_save;
-
-	// create the func object
-	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length, body);
-	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
-	write_bytes(parser->currentChunk, OP_CONSTANT, index);
-
-
-	// create the string object
-	StringObj* func_str = create_string_obj(func_tkn.start, func_tkn.length);
-	uint8_t str_index = add_constant(parser->currentChunk, VAR_OBJ(func_str));
-	write_bytes(parser->currentChunk, OP_STORE_GLOBAL, str_index);
+	// TODO: Create new chunk for func body
 
 }
 
@@ -315,7 +299,7 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 	if (parser->current.type != TOKEN_EQUAL) {
 		return parse_identifier(parser, scanner);
 	}
-	write_chunk(parser->currentChunk, OP_NIL);
+	write_chunk(current_chunk(parser), OP_NIL);
 	Token variable_ident = parser->previous;
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 
@@ -323,8 +307,8 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 
 	//// create the string object
 	StringObj* obj = create_string_obj(variable_ident.start, variable_ident.length);
-	uint8_t index = add_constant(parser->currentChunk, VAR_OBJ(obj));
-	write_bytes(parser->currentChunk, OP_ASSIGN_GLOBAL, index);
+	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
+	write_bytes(current_chunk(parser), OP_ASSIGN_GLOBAL, index);
 
 }
 
@@ -340,7 +324,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
 	}
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
-	write_chunk(parser->currentChunk, OP_POP_TOP);
+	write_chunk(current_chunk(parser), OP_POP_TOP);
 }
 
 
@@ -353,7 +337,7 @@ static void parse_expression(Parser* parser, Scanner* scanner) {
 
 static void end_compile(Parser* parser, Scanner* scanner) {
 	if (parser->current.type == TOKEN_EOF) {
-		write_chunk(parser->currentChunk, OP_HALT);
+		write_chunk(current_chunk(parser), OP_HALT);
 		return;
 	}
 	error(parser, "expected EOF at end of file got");
@@ -403,13 +387,13 @@ static ParseRule* get_rule(uint8_t token) {
 }
 
 
-bool compile(const char* source, Chunk* chunk) {
+FunctionObj* compile(const char* source) {
 	// create objects
 	Scanner scanner = create_token_scanner(source);
 	Parser parser;
 
 	// inits
-	init_parser(&parser, chunk); // inits the parser
+	init_parser(&parser); // inits the parser
 
 	advance(&scanner, &parser);
 	while (parser.current.type != TOKEN_EOF) {
@@ -421,5 +405,5 @@ bool compile(const char* source, Chunk* chunk) {
 
 
 
-	return !parser.hadError;
+	return parser.hadError ? NULL : parser.func;
 }

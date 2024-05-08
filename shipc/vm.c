@@ -49,15 +49,15 @@ void free_vm(VM* vm) {
 	free_hash_map(vm->globals);
 }
 
-void interpret(VM* vm, Chunk* chunk) {
+void interpret(VM* vm, FunctionObj* func) {
 #define READ_BYTE() *vm->ip++
-#define READ_CONSTANT() chunk->constants.arr[READ_BYTE()]
+#define READ_CONSTANT() func->body.constants.arr[READ_BYTE()]
 #define READ_SHORT() \
 	(vm->ip += 2, (uint16_t) ((vm->ip[-2] << 8) | vm->ip[-1]))
 
 
-	vm->chunk = chunk;
-	vm->ip = chunk->codes;
+	vm->chunk = &func->body;
+	vm->ip = vm->chunk->codes;
 
 	for (;;) {
 		uint8_t opcode = READ_BYTE();

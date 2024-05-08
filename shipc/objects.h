@@ -14,16 +14,15 @@ typedef struct {
 
 typedef struct {
 	Obj obj;
-	char* name;
-	int length;
 	Chunk body;
+	StringObj* name;
 } FunctionObj;
 /// 
 
 StringObj* create_string_obj(const char* value, int length);
 StringObj* concat_strings(const char* value1, int length1, const char* value2, int length2);
 
-FunctionObj* create_func_obj(const char* value, int length, Chunk body);
+FunctionObj* create_func_obj(const char* value, int length);
 
 
 void free_object(Obj* obj);

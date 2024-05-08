@@ -4,8 +4,9 @@
 
 #include <stdbool.h>
 #include "vm.h"
+#include "objects.h"
 
 
-bool compile(const char* source, Chunk* chunk);
+FunctionObj* compile(const char* source);
 
 #endif 
