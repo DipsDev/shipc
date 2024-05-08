@@ -286,15 +286,19 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration at");
 	// TODO: Add calling with arguments
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed ) in function declaration in"); // no params currently
+
+
 	
 
 	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected open block in function declaration"); // eat the {
-
+	
 
 	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length);
 	FunctionObj* before_func = parser->func;
 	parser->func = obj;
-	while (parser->previous.type != TOKEN_EOF && parser->previous.type != TOKEN_RIGHT_BRACE) {
+	
+	while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_RIGHT_BRACE) {
+		
 		parse_statement(parser, scanner);
 	}
 	parser->func = before_func;
