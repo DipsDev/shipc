@@ -7,12 +7,14 @@
 
 int main() {
 	const char* source_code =
-		"var x = 15;";
+		"var x = 15; print(x);";
 
 	FunctionObj* compiled_func = compile(source_code);
 	if (compiled_func == NULL) {
 		exit(1);
 	}
+
+	disassemble_chunk(&compiled_func->body);
 
 	VM vm;
 	init_vm(&vm);

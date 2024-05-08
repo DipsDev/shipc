@@ -8,6 +8,7 @@
 #include "value.h"
 #include "chunk.h"
 #include "table.h"
+#include "objects.h"
 
 #define STACK_MAX 512
 
