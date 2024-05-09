@@ -130,13 +130,13 @@ static void parse_number(Parser* parser, Scanner* scanner) {
 	write_bytes(current_chunk(parser), OP_CONSTANT, index);
 }
 
-static void parse_grouping(Parser* parser, Scanner* scanner, const char *message) {
+static void parse_grouping(Parser* parser, Scanner* scanner) {
 	parse_precedence(parser, scanner, PREC_CALL);
 	if (parser->current.type == TOKEN_RIGHT_PAREN) {
 		advance(scanner, parser);
 		return;
 	}
-	error(parser, message);
+	error(parser, "unclosed '(' block at");
 }
 
 static void parse_boolean(Parser* parser, Scanner* scanner) {

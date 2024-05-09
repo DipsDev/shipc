@@ -4,38 +4,33 @@
 #include "objects.h"
 
 
-static int disassemble_instruction(Chunk* chunk, int offset);
+
 
 static int simple_instruction(const char* string, int offset) {
 	printf("| %04d  %s  |\n", offset, string);
 	return 1;
 }
 
-static void print_obj(Chunk* chunk, Value val, int offset) {
+static void print_obj(Chunk* chunk, Value val, int offset, char* message) {
 	uint8_t i = chunk->codes[offset + 1];
 	switch (AS_OBJ(val)->type) {
-		case OBJ_STRING: {
-			StringObj* obj = AS_STRING(val);
-			printf("| %04d OP_CONSTANT %u (%.*s) |\n", offset, i,obj->length, obj->value);
-			break;
-		}
-		case OBJ_FUNCTION: {
-			FunctionObj* obj = AS_FUNCTION(val);
-			printf("=== disassembled function %.*s l(%i) ===\n", obj->name->length, obj->name->value, obj->body.count);
-			for (int j = 0; j < obj->body.count;) {
-				printf("\t");
-				j += disassemble_instruction(&obj->body, j);
-			}
-			printf("=== function ===\n");
-			break;
-		}
-	}
+        case OBJ_STRING: {
+            StringObj *obj = AS_STRING(val);
+            printf("| %04d %s %u (%.*s) |\n", offset, message, i , obj->length, obj->value);
+            break;
+        }
+        case OBJ_FUNCTION: {
+            FunctionObj *obj = AS_FUNCTION(val);
+            disassemble_func(obj);
+            break;
+        }
+    }
 }
 
 static int variable_instruction(Chunk* chunk, char* op_code, int offset) {
 	uint8_t index = chunk->codes[offset + 1];
 	Value val = chunk->constants.arr[index];
-    print_obj(chunk, val, offset);
+    print_obj(chunk, val, offset, op_code);
 
 	return 2;
 }
@@ -47,7 +42,7 @@ static int constant_instruction(Chunk* chunk, int offset) {
 	case VAL_BOOL: printf("| %04d OP_CONSTANT %u (%s) |\n", offset, index, AS_BOOL(val) ? "true" : "false"); break;
 	case VAL_NIL: printf("| %04d OP_CONSTANT %u (nil) |\n", offset, index); break;
 	case VAL_NUMBER: printf("| %04d OP_CONSTANT %u (%.2f) |\n", offset, index, AS_NUMBER(val)); break;
-	case VAL_OBJ: print_obj(chunk, val, offset);
+	case VAL_OBJ: print_obj(chunk, val, offset, "OP_CONSTANT");
 	}
 	return 2;
 }
@@ -95,8 +90,9 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 }
 
 void disassemble_func(FunctionObj* obj) {
-	printf("=== disassembled main script l(%i) ===\n", obj->body.count);
+	printf("=== disassembled %.*s script l(%i) ===\n", obj->name->length, obj->name->value, obj->body.count);
 	for (int i = 0; i < obj->body.count;) {
 		i += disassemble_instruction(&obj->body, i);
 	}
+    printf("=== end function %.*s ===\n", obj->name->length, obj->name->value);
 }
