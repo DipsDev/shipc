@@ -32,8 +32,8 @@ typedef struct {
 } Token;
 
 typedef struct {
-	const char* start;
-	const char* current;
+	char* start;
+	char* current;
 	int line;
 } Scanner;
 

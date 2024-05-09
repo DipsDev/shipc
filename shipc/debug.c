@@ -3,6 +3,9 @@
 #include "debug.h"
 #include "objects.h"
 
+
+static int disassemble_instruction(Chunk* chunk, int offset);
+
 static int simple_instruction(const char* string, int offset) {
 	printf("| %04d  %s  |\n", offset, string);
 	return 1;
@@ -32,14 +35,7 @@ static void print_obj(Chunk* chunk, Value val, int offset) {
 static int variable_instruction(Chunk* chunk, char* op_code, int offset) {
 	uint8_t index = chunk->codes[offset + 1];
 	Value val = chunk->constants.arr[index];
-	switch (AS_OBJ(val)->type) {
-	case OBJ_STRING: {
-		StringObj* obj = AS_STRING(val);
-		printf("| %04d %s %u (%.*s) |\n", offset, op_code, index, obj->length, obj->value);
-		break;
-	}
-
-	}
+    print_obj(chunk, val, offset);
 
 	return 2;
 }
@@ -92,7 +88,7 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
 		case OP_CONSTANT: return constant_instruction(chunk, offset);
-		
+        default: return 1; // should be unreachable
 
 
 	}

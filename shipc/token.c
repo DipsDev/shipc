@@ -62,7 +62,7 @@ static Token string(Scanner* scanner) {
 		advance(scanner);
 	}
 	if (isAtEnd(scanner)) {
-		return create_error_token(scanner, "EOL while scanning string literal");
+		return create_error_token(scanner);
 	}
 	advance(scanner); // eat the ".
 	return create_token(scanner, TOKEN_STRING);
