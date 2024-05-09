@@ -253,11 +253,15 @@ static Value run(VM* vm, FunctionObj* script) {
 				FunctionObj* func = AS_FUNCTION(var_node->value);
                 uint8_t * jump_address = vm->ip;
                 Value return_value = run(vm, func);
-                printf("%d", return_value.type);
+                // if function was error, then error it up - currently
+                if (IS_ERROR(return_value)) {
+                    return return_value;
+                }
 
                 // return the jump address to the right place
                 vm->ip = jump_address;
                 vm->chunk = &script->body;
+                break;
 
 			}
             default:

@@ -301,6 +301,11 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 		
 		parse_statement(parser, scanner);
 	}
+
+    // set the end of the function
+    write_chunk(current_chunk(parser), OP_HALT);
+
+
 	parser->func = before_func;
 	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block in function declaration"); // eat the }
 
