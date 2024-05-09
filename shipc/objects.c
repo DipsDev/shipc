@@ -6,25 +6,25 @@
 
 // <---- freeing related functions ----->
 static void free_string(Obj* str_obj) {
-	if (str_obj->type != OBJ_STRING) {
-		printf("[ERROR] free_string is supposed to receive only string objects");
-		exit(1);
-	}
 	StringObj* obj = (StringObj*)str_obj;
 	free(obj->value);
 	free(obj);
 }
 
 static void free_function(Obj* func_obj) {
-	if (func_obj->type != OBJ_STRING) {
-		printf("[ERROR] free_string is supposed to receive only string objects");
-		exit(1);
-	}
 	FunctionObj* obj = (FunctionObj*)func_obj;
 
-	free_string(obj->name);
+	free_string((Obj *) obj->name);
 	free_chunk(&obj->body);
 	free(func_obj);
+
+}
+
+static void free_error(Obj* err_obj) {
+    ErrorObj* obj = (ErrorObj*) err_obj;
+    free_string((Obj *) obj->value);
+    free(obj);
+
 
 }
 
@@ -96,6 +96,20 @@ StringObj* create_string_obj(const char* value, int length) {
 	str_obj->length = length;
 
 	return str_obj;
+}
+
+ErrorObj* create_err_obj(const char* value, int length, ErrorType type) {
+    StringObj* name = create_string_obj(value, length);
+    Obj* object = allocate_object(OBJ_ERROR);
+    ErrorObj* err_obj = (ErrorObj*) malloc(sizeof(ErrorObj));
+    if (err_obj == NULL) {
+        printf("[ERROR] couldn't allocate error object");
+        exit(1);
+    }
+    err_obj->obj = *object;
+    err_obj->value = name;
+    err_obj->type = type;
+    return err_obj;
 }
 
 FunctionObj* create_func_obj(const char* value, int length) {

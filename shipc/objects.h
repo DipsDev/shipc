@@ -17,6 +17,20 @@ typedef struct {
 	Chunk body;
 	StringObj* name;
 } FunctionObj;
+
+// error related enums
+typedef enum {
+    ERR_SYNTAX,
+    ERR_NAME,
+    ERR_TYPE
+} ErrorType;
+
+typedef struct {
+    Obj obj;
+    StringObj* value;
+    ErrorType type;
+
+} ErrorObj;
 /// 
 
 StringObj* create_string_obj(const char* value, int length);
@@ -24,6 +38,8 @@ StringObj* concat_strings(const char* value1, int length1, const char* value2, i
 
 FunctionObj* create_func_obj(const char* value, int length);
 
+
+ErrorObj* create_err_obj(const char* value, int length, ErrorType type);
 
 void free_object(Obj* obj);
 bool compare_objects(Obj* obj1, Obj* obj2);
