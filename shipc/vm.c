@@ -7,7 +7,7 @@
 #include "vm.h"
 #include "objects.h"
 
-static Value run (VM* vm, FunctionObj* script);
+static Value run (VM* vm, FunctionObj* script, unsigned int scope);
 
 static void push(VM* vm, Value value) {
 	if ((size_t)(vm->sp - vm->stack) == STACK_MAX) {
@@ -55,15 +55,15 @@ void free_vm(VM* vm) {
 }
 
 void interpret(VM* vm, FunctionObj* main_script) {
-    Value end_value = run(vm, main_script);
+    Value end_value = run(vm, main_script, 0);
     if(IS_ERROR(end_value)) {
         ErrorObj* err_obj = (ErrorObj*) AS_OBJ(end_value);
-        printf("[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
+        fprintf(stderr, "[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
         return;
     }
 }
 
-static Value run(VM* vm, FunctionObj* script) {
+static Value run(VM* vm, FunctionObj* script, unsigned int scope) {
 #define READ_BYTE() *vm->ip++
 #define READ_CONSTANT() script->body.constants.arr[READ_BYTE()]
 #define READ_SHORT() \
@@ -76,7 +76,13 @@ static Value run(VM* vm, FunctionObj* script) {
 	for (;;) {
 		uint8_t opcode = READ_BYTE();
 		switch (opcode) {
-		    case OP_HALT: return pop(vm);
+            case OP_RETURN: {
+                if (scope == 0) {
+                    return runtime_error("'return' outside of function", ERR_SYNTAX);
+                }
+                return pop(vm);
+            }
+            case OP_HALT: return VAR_NIL;
 			case OP_CONSTANT: {
 				push(vm, READ_CONSTANT());
 				break;
@@ -252,7 +258,7 @@ static Value run(VM* vm, FunctionObj* script) {
 				}
 				FunctionObj* func = AS_FUNCTION(var_node->value);
                 uint8_t * jump_address = vm->ip;
-                Value return_value = run(vm, func);
+                Value return_value = run(vm, func, scope + 1);
                 // if function was error, then error it up - currently
                 if (IS_ERROR(return_value)) {
                     return return_value;

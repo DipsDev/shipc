@@ -7,7 +7,7 @@
 
 int main() {
 	const char* source_code =
-		"fn hello_world() { var x = 4; x; }  hello_world();";
+		"fn hello_world() { return 4; }  hello_world();";
 
 	FunctionObj* compiled_func = compile(source_code);
 	if (compiled_func == NULL) {

@@ -279,6 +279,17 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
 	
 }
 
+static void parse_return_statement(Parser* parser, Scanner* scanner) {
+    advance(scanner, parser); // eat the return keyword
+    if (parser->current.type == TOKEN_SEMICOLON) { // if no expression was after the return, return nil;
+        write_chunk(current_chunk(parser), OP_NIL);
+    } else {
+        parse_precedence(parser, scanner, PREC_OR); // parse the value
+    }
+    write_chunk(current_chunk(parser), OP_RETURN);
+    expect(scanner, parser, TOKEN_SEMICOLON, "expected ; after statement got");
+}
+
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	advance(scanner, parser); // eat the fn keyword
 	expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier at");
@@ -296,15 +307,12 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length);
 	FunctionObj* before_func = parser->func;
 	parser->func = obj;
-	
+
+
 	while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_RIGHT_BRACE) {
 		
 		parse_statement(parser, scanner);
 	}
-
-    // set the end of the function
-    write_chunk(current_chunk(parser), OP_HALT);
-
 
 	parser->func = before_func;
 	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block in function declaration"); // eat the }
@@ -348,6 +356,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
 	case TOKEN_PRINT: return parse_debug_statement(parser, scanner);
 	case TOKEN_VAR: return parse_variable(parser, scanner);
 	case TOKEN_FN: return parse_func_statement(parser, scanner);
+    case TOKEN_RETURN: return parse_return_statement(parser, scanner);
 	}
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");

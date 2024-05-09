@@ -24,6 +24,8 @@ static void print_obj(Chunk* chunk, Value val, int offset, char* message) {
             disassemble_func(obj);
             break;
         }
+        case OBJ_ERROR:
+            break;
     }
 }
 
@@ -82,6 +84,7 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 		case OP_POP_JUMP_IF_FALSE: return jump_instruction(chunk, offset);
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
+        case OP_RETURN: return simple_instruction("OP_RETURN", offset);
 		case OP_CONSTANT: return constant_instruction(chunk, offset);
         default: return 1; // should be unreachable
 
