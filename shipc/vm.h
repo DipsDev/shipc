@@ -26,6 +26,6 @@ typedef struct {
 
 void init_vm(VM* vm);
 void free_vm(VM* vm);
-void interpret(VM* vm, FunctionObj* func);
+void interpret(VM* vm, FunctionObj* script);
 
 #endif // !SHIP_VM_H_

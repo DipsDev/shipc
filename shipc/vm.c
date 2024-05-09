@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "vm.h"
 #include "objects.h"
 
-
+static Value run (VM* vm, FunctionObj* script);
 
 static void push(VM* vm, Value value) {
 	if ((size_t)(vm->sp - vm->stack) == STACK_MAX) {
@@ -26,13 +27,17 @@ static Value pop(VM* vm) {
 	return *vm->sp;
 }
 
-static void runtime_error(const char* message, ...) {
-	va_list args;
-	va_start(args, message);
-	printf("[ERROR] Encountered runtime error: ");
-	vprintf(message, args);
-	va_end(args);
+static Value runtime_error(const char* message, ErrorType type, ...) {
+    // creates an informative error message, and returns it
+    char temp[256] = {0};
+    va_list args;
+    va_start(args, type);
+    vsnprintf(temp, 255, message, args);
+    va_end(args);
+    ErrorObj* err = create_err_obj(temp, (int) strlen(temp), type);
+    return VAR_OBJ(err);
 }
+
 
 void init_vm(VM* vm) {
 	// set the ip to null
@@ -49,20 +54,29 @@ void free_vm(VM* vm) {
 	free_hash_map(vm->globals);
 }
 
-void interpret(VM* vm, FunctionObj* func) {
+void interpret(VM* vm, FunctionObj* main_script) {
+    Value end_value = run(vm, main_script);
+    if(IS_ERROR(end_value)) {
+        ErrorObj* err_obj = (ErrorObj*) AS_OBJ(end_value);
+        printf("[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
+        return;
+    }
+}
+
+static Value run(VM* vm, FunctionObj* script) {
 #define READ_BYTE() *vm->ip++
-#define READ_CONSTANT() func->body.constants.arr[READ_BYTE()]
+#define READ_CONSTANT() script->body.constants.arr[READ_BYTE()]
 #define READ_SHORT() \
 	(vm->ip += 2, (uint16_t) ((vm->ip[-2] << 8) | vm->ip[-1]))
 
 
-	vm->chunk = &func->body;
+	vm->chunk = &script->body;
 	vm->ip = vm->chunk->codes;
 
 	for (;;) {
 		uint8_t opcode = READ_BYTE();
 		switch (opcode) {
-		case OP_HALT: print_value(pop(vm)); return;
+		    case OP_HALT: return pop(vm);
 			case OP_CONSTANT: {
 				push(vm, READ_CONSTANT());
 				break;
@@ -70,8 +84,7 @@ void interpret(VM* vm, FunctionObj* func) {
 			case OP_NOT: {
 				Value value = pop(vm);
 				if (!IS_BOOL(value)) {
-					runtime_error("'not' operator cannot be called on non boolean object");
-					return;
+					return runtime_error("'not' operator cannot be called on non boolean object", ERR_TYPE);
 				}
 				push(vm, VAR_BOOL(!AS_BOOL(value)));
 				break;
@@ -79,8 +92,7 @@ void interpret(VM* vm, FunctionObj* func) {
 			case OP_NEGATE: {
 				Value value = pop(vm);
 				if (!IS_NUMBER(value)) {
-					runtime_error("unary operator cannot be called on non number object");
-					return;
+                    return runtime_error("unary operator cannot be called on non number object", ERR_TYPE);
 				}
 				push(vm, VAR_NUMBER(-AS_NUMBER(value)));
 				break;
@@ -89,8 +101,8 @@ void interpret(VM* vm, FunctionObj* func) {
 				Value a = pop(vm);
 				Value b = pop(vm);
 				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
-					runtime_error("* operator accepts only numbers");
-					return;
+					return runtime_error("* operator accepts only numbers", ERR_TYPE);
+
 				}
 				// simple multi by 2 optimiziation
 				double mul = AS_NUMBER(a) * AS_NUMBER(b);
@@ -116,16 +128,14 @@ void interpret(VM* vm, FunctionObj* func) {
 					push(vm, VAR_OBJ(concat));
 					break;
 				}
-				runtime_error("unknown operands for '+' operator");
-				return;
-				
+				return runtime_error("unknown operands for '+' operator", ERR_TYPE);
+
 			}
 			case OP_DIV: {
 				Value b = pop(vm);
 				Value a = pop(vm);
 				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
-					runtime_error("/ operator accepts only numbers");
-					return;
+					return runtime_error("/ operator accepts only numbers", ERR_TYPE);
 				}
 				double mul = AS_NUMBER(a) / AS_NUMBER(b);
 				push(vm, VAR_NUMBER(mul));
@@ -135,8 +145,7 @@ void interpret(VM* vm, FunctionObj* func) {
 				Value b = pop(vm);
 				Value a = pop(vm);
 				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
-					runtime_error("/ operator accepts only numbers");
-					return;
+					return runtime_error("/ operator accepts only numbers", ERR_TYPE);
 				}
 				double mul = AS_NUMBER(a) - AS_NUMBER(b);
 				push(vm, VAR_NUMBER(mul));
@@ -193,8 +202,7 @@ void interpret(VM* vm, FunctionObj* func) {
 				Value variable_name = READ_CONSTANT();
 
 				if (!IS_STRING(variable_name)) {
-					runtime_error("expected variable name to be string");
-					exit(1);
+					return runtime_error("expected variable name to be string", ERR_TYPE);
 				}
 				StringObj* obj = AS_STRING(variable_name);
 				put_node(vm->globals, obj->value, obj->length, var_value);
@@ -205,15 +213,13 @@ void interpret(VM* vm, FunctionObj* func) {
 				Value variable_name = READ_CONSTANT();
 
 				if (!IS_STRING(variable_name)) {
-					runtime_error("expected variable name to be string");
-					exit(1);
+					return runtime_error("expected variable name to be string", ERR_TYPE);
 				}
 				
 				StringObj* obj = AS_STRING(variable_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					runtime_error("variable name '%.*s' is undefined", obj->length, obj->value);
-					exit(1);
+					return runtime_error("variable name '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
 				}
 				var_node->value = var_value;
 				break;
@@ -221,14 +227,12 @@ void interpret(VM* vm, FunctionObj* func) {
 			case OP_LOAD_GLOBAL: {
 				Value variable_name = READ_CONSTANT();
 				if (!IS_STRING(variable_name)) {
-					runtime_error("expected variable name to be string");
-					exit(1);
+					return runtime_error("expected variable name to be string", ERR_TYPE);
 				}
 				StringObj* obj = AS_STRING(variable_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					runtime_error("variable '%.*s' is undefined", obj->length, obj->value);
-					exit(1);
+					return runtime_error("variable '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
 				}
 				push(vm, var_node->value);
 				break;
@@ -236,22 +240,28 @@ void interpret(VM* vm, FunctionObj* func) {
 			case OP_CALL: {
 				Value func_name = READ_CONSTANT();
 				if (!IS_STRING(func_name)) {
-					runtime_error("expected function name to be string");
-					exit(1);
+					return runtime_error("expected function name to be string", ERR_TYPE);
 				}
 				StringObj* obj = AS_STRING(func_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					runtime_error("function '%.*s' is undefined", obj->length, obj->value);
-					exit(1);
+					return runtime_error("function '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
 				}
 				if (!IS_FUNCTION(var_node->value)) {
-					runtime_error("object '%.*s' is not callable.", obj->length, obj->value);
-					exit(1);
+					return runtime_error("object '%.*s' is not callable.", ERR_NAME, obj->length, obj->value);
 				}
 				FunctionObj* func = AS_FUNCTION(var_node->value);
-				// TODO: Implement the function running
+                uint8_t * jump_address = vm->ip;
+                Value return_value = run(vm, func);
+                printf("%d", return_value.type);
+
+                // return the jump address to the right place
+                vm->ip = jump_address;
+                vm->chunk = &script->body;
+
 			}
+            default:
+                return runtime_error("unhandled op code %d", ERR_SYNTAX, opcode);
 		}
 	}
 #undef READ_SHORT
