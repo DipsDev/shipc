@@ -56,14 +56,6 @@ static int jump_instruction(Chunk* chunk, int offset) {
 	return 3;
 }
 
-static int call_instruction(Chunk* chunk, int offset) {
-	uint8_t index = chunk->codes[offset + 1];
-	Value val = chunk->constants.arr[index];
-	StringObj* obj = AS_STRING(val);
-	printf("| %04d OP_CALL %.*s\n", offset, obj->length, obj->value);
-	return 2;
-}
-
 static int disassemble_instruction(Chunk* chunk, int offset) {
 	uint8_t code = chunk->codes[offset];
 	switch (code) {
@@ -74,7 +66,7 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 		case OP_DIV: return simple_instruction("OP_DIV", offset);
 		case OP_MUL: return simple_instruction("OP_MUL", offset);
 		case OP_FALSE: return simple_instruction("OP_FALSE", offset);
-		case OP_CALL: return call_instruction(chunk, offset);
+		case OP_CALL: return simple_instruction("OP_CALL", offset);
 		case OP_NOT: return simple_instruction("OP_NOT", offset);
 		case OP_TRUE: return simple_instruction("OP_TRUE", offset);
 		case OP_NIL:return simple_instruction("OP_NIL", offset);

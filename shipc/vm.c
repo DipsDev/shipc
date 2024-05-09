@@ -61,6 +61,7 @@ void interpret(VM* vm, FunctionObj* main_script) {
         fprintf(stderr, "[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
         return;
     }
+    print_value(pop(vm));
 }
 
 static Value run(VM* vm, FunctionObj* script, unsigned int scope) {
@@ -244,25 +245,26 @@ static Value run(VM* vm, FunctionObj* script, unsigned int scope) {
 				break;
 			}
 			case OP_CALL: {
-				Value func_name = READ_CONSTANT();
-				if (!IS_STRING(func_name)) {
-					return runtime_error("expected function name to be string", ERR_TYPE);
+				Value func_name = pop(vm);
+				if (!IS_FUNCTION(func_name)) {
+					return runtime_error("expected function to be a function", ERR_TYPE);
 				}
-				StringObj* obj = AS_STRING(func_name);
-				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
+				FunctionObj * obj = AS_FUNCTION(func_name);
+				HashNode* var_node = get_node(vm->globals, obj->name->value, obj->name->length);
 				if (var_node == NULL) {
-					return runtime_error("function '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
+					return runtime_error("function '%.*s' is undefined", ERR_NAME, obj->name->length, obj->name->value);
 				}
 				if (!IS_FUNCTION(var_node->value)) {
-					return runtime_error("object '%.*s' is not callable.", ERR_NAME, obj->length, obj->value);
+					return runtime_error("object '%.*s' is not callable.", ERR_NAME, obj->name->length, obj->name->value);
 				}
-				FunctionObj* func = AS_FUNCTION(var_node->value);
                 uint8_t * jump_address = vm->ip;
-                Value return_value = run(vm, func, scope + 1);
+                Value return_value = run(vm, obj, scope + 1);
                 // if function was error, then error it up - currently
                 if (IS_ERROR(return_value)) {
                     return return_value;
                 }
+
+                push(vm, return_value);
 
                 // return the jump address to the right place
                 vm->ip = jump_address;

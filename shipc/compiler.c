@@ -264,17 +264,17 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 static void parse_identifier(Parser* parser, Scanner* scanner) {
 	// add the ident string to the pool so we can either call or load it
 	StringObj* obj = create_string_obj(parser->previous.start, parser->previous.length);
-	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
+    uint8_t string_index = add_constant(current_chunk(parser), VAR_OBJ(obj));
+    write_bytes(current_chunk(parser), OP_LOAD_GLOBAL, string_index);
 
-	if (parser->current.type != TOKEN_LEFT_PAREN) {
-		write_bytes(current_chunk(parser), OP_LOAD_GLOBAL, index);
-		return;
-	}
-	write_chunk(current_chunk(parser), OP_NIL);
+    if (parser->current.type != TOKEN_LEFT_PAREN) {
+        return;
+    }
+
 	advance(scanner, parser); // eat the (
 	// TODO: Add option to add arguments
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed argument list of a function at"); // eat the ) => no arguments for now
-	write_bytes(current_chunk(parser), OP_CALL, index);
+	write_chunk(current_chunk(parser), OP_CALL);
 
 	
 }
@@ -283,6 +283,7 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
     advance(scanner, parser); // eat the return keyword
     if (parser->current.type == TOKEN_SEMICOLON) { // if no expression was after the return, return nil;
         write_chunk(current_chunk(parser), OP_NIL);
+
     } else {
         parse_precedence(parser, scanner, PREC_OR); // parse the value
     }
@@ -334,7 +335,6 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 	if (parser->current.type != TOKEN_EQUAL) {
 		return parse_identifier(parser, scanner);
 	}
-	write_chunk(current_chunk(parser), OP_NIL);
 	Token variable_ident = parser->previous;
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 
