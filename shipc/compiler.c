@@ -270,11 +270,14 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
     if (parser->current.type != TOKEN_LEFT_PAREN) {
         return;
     }
-
-	advance(scanner, parser); // eat the (
-	// TODO: Add option to add arguments
-	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed argument list of a function at"); // eat the ) => no arguments for now
-	write_chunk(current_chunk(parser), OP_CALL);
+    // allow to concat function calls, for ex: pow(2)(3)
+    while (parser->current.type == TOKEN_LEFT_PAREN) {
+        advance(scanner, parser); // eat the (
+        // TODO: Add option to add arguments
+        expect(scanner, parser, TOKEN_RIGHT_PAREN,
+               "unclosed argument list of a function at"); // eat the ) => no arguments for now
+        write_chunk(current_chunk(parser), OP_CALL);
+    }
 
 	
 }
