@@ -98,7 +98,7 @@ static InterpretResult run(VM* vm) {
                     return runtime_error(vm, "'return' outside of function", ERR_SYNTAX);
                 }
                 // clear the current frame
-                free_stack_frame(frame);
+                // free_stack_frame(frame);
                 vm->frameCount--;
                 // set the new frame
                 frame = &vm->callStack[vm->frameCount - 1];
@@ -106,7 +106,7 @@ static InterpretResult run(VM* vm) {
 
             }
             case OP_HALT: {
-                free_stack_frame(frame);
+                // free_stack_frame(frame);
                 return RESULT_SUCCESS;
             }
 			case OP_CONSTANT: {
@@ -183,6 +183,10 @@ static InterpretResult run(VM* vm) {
 				push(vm, VAR_NUMBER(mul));
 				break;
 			}
+            case OP_SHOW_TOP: {
+                print_value(pop(vm));
+                break;
+            }
 			case OP_FALSE: {
 				push(vm, VAR_BOOL(false));
 				break;
@@ -283,6 +287,7 @@ static InterpretResult run(VM* vm) {
                 new_func.function = obj;
                 new_func.ip = new_func.function->body.codes;
                 push_frame(vm, new_func);
+                frame = &new_func;
                 break;
 
 			}

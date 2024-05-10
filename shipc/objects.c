@@ -32,7 +32,8 @@ void free_object(Obj* obj) {
 	switch (obj->type) {
 	case OBJ_STRING: return free_string(obj);
 	case OBJ_FUNCTION: return free_function(obj);
-	default: printf("[ERROR] cannot free object, it is not yet supported."); // unreachable
+    case OBJ_ERROR: return free_error(obj);
+	default: printf("[ERROR] cannot free object, it is not yet supported. got object %d", obj->type); // unreachable
 	}
 }
 // <------------------------------------>

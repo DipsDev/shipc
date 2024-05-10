@@ -131,7 +131,7 @@ static void parse_number(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_grouping(Parser* parser, Scanner* scanner) {
-	parse_precedence(parser, scanner, PREC_CALL);
+	parse_precedence(parser, scanner, PREC_OR);
 	if (parser->current.type == TOKEN_RIGHT_PAREN) {
 		advance(scanner, parser);
 		return;
@@ -209,6 +209,7 @@ static void parse_debug_statement(Parser* parser, Scanner* scanner) {
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "expected ) after func call at");
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; after call");
+    write_chunk(current_chunk(parser), OP_SHOW_TOP);
 }
 
 static void parse_if_statement(Parser* parser, Scanner* scanner) {
@@ -320,6 +321,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 		
 		parse_statement(parser, scanner);
 	}
+    write_bytes(current_chunk(parser), OP_NIL, OP_RETURN);
 
 	parser->func = before_func;
 	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block in function declaration"); // eat the }
