@@ -241,6 +241,9 @@ static InterpretResult run(VM* vm) {
 					return runtime_error(vm, "expected variable name to be string", ERR_TYPE);
 				}
 				StringObj* obj = AS_STRING(variable_name);
+                if (get_node(vm->globals, obj->value, obj->length) != NULL) {
+                    return runtime_error(vm, "variable '%.*s' is already defined in the current scope", ERR_NAME, obj->length, obj->value);
+                }
 				put_node(vm->globals, obj->value, obj->length, var_value);
 				break;
 			}

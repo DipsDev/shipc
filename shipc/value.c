@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "memory.h"
 #include "value.h"
@@ -36,10 +37,26 @@ void free_value_array(ValueArray* arr) {
 	init_value_array(arr);
 }
 
-static void print_object(Obj* obj) {
-	switch (obj->type) {
-	case OBJ_STRING: printf("%s", ((StringObj*) obj)->value);
-	}
+static void print_object(Value obj_val) {
+	switch (AS_OBJ(obj_val)->type) {
+	case OBJ_STRING: {
+        StringObj* str_obj = AS_STRING(obj_val);
+        for (int i = 0; i < str_obj->length -1; i++) {
+            if (str_obj->value[i] == '\\' && str_obj->value[i + 1] == 'n') {
+                str_obj->value[i] = '\r';
+                str_obj->value[i + 1] = '\n';
+            }
+
+        }
+        printf("%.*s", str_obj->length, str_obj->value);
+        break;
+    }
+        case OBJ_FUNCTION:
+            printf("Printing a function, how did you get here???");
+            break;
+        case OBJ_ERROR:
+            break;
+    }
 }
 
 void print_value(Value val) {
@@ -47,7 +64,7 @@ void print_value(Value val) {
 	case VAL_BOOL: printf("%s", AS_BOOL(val) ? "true" : "false"); break;
 	case VAL_NIL: printf("nil"); break;
 	case VAL_NUMBER: printf("%f", AS_NUMBER(val)); break;
-	case VAL_OBJ: print_object(AS_OBJ(val)); break;
+	case VAL_OBJ: print_object(val); break;
 	}
 }
 
