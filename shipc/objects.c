@@ -112,7 +112,7 @@ ErrorObj* create_err_obj(const char* value, int length, ErrorType type) {
     return err_obj;
 }
 
-FunctionObj* create_func_obj(const char* value, int length) {
+FunctionObj* create_func_obj(const char* value, int length, FunctionType type) {
 	// create the required arguements
 	StringObj* name = create_string_obj(value, length);
 	Obj* object = allocate_object(OBJ_FUNCTION);
@@ -125,6 +125,7 @@ FunctionObj* create_func_obj(const char* value, int length) {
 	// set the values
 	func_obj->name = name;
 	func_obj->obj = *object;
+    func_obj->type = type;
 
 	Chunk body;
 	init_chunk(&body);

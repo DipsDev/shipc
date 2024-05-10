@@ -7,7 +7,7 @@
 #include "vm.h"
 #include "objects.h"
 
-static Value run (VM* vm, FunctionObj* script, unsigned int scope);
+static Value run (VM* vm, FunctionObj* script);
 
 static void push(VM* vm, Value value) {
 	if ((size_t)(vm->sp - vm->stack) == STACK_MAX) {
@@ -55,7 +55,7 @@ void free_vm(VM* vm) {
 }
 
 void interpret(VM* vm, FunctionObj* main_script) {
-    Value end_value = run(vm, main_script, 0);
+    Value end_value = run(vm, main_script );
     if(IS_ERROR(end_value)) {
         ErrorObj* err_obj = (ErrorObj*) AS_OBJ(end_value);
         fprintf(stderr, "[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
@@ -64,7 +64,7 @@ void interpret(VM* vm, FunctionObj* main_script) {
     print_value(pop(vm));
 }
 
-static Value run(VM* vm, FunctionObj* script, unsigned int scope) {
+static Value run(VM* vm, FunctionObj* script) {
 #define READ_BYTE() *vm->ip++
 #define READ_CONSTANT() script->body.constants.arr[READ_BYTE()]
 #define READ_SHORT() \
@@ -256,7 +256,7 @@ static Value run(VM* vm, FunctionObj* script, unsigned int scope) {
 				}
                 uint8_t * jump_address = vm->ip;
                 // TODO: The run should NOT be recursive, but push the function to the call stack and make the run function execute the function at the top of the stack.
-                Value return_value = run(vm, obj, scope + 1);
+                Value return_value = run(vm, obj);
                 // if function was error, then error it up - currently
                 if (IS_ERROR(return_value)) {
                     return return_value;

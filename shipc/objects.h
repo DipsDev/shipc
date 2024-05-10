@@ -12,10 +12,17 @@ typedef struct {
 	int length;
 } StringObj;
 
+
+typedef enum {
+    FN_SCRIPT,
+    FN_FUNCTION
+} FunctionType;
+
 typedef struct {
 	Obj obj;
 	Chunk body;
 	StringObj* name;
+    FunctionType type;
 } FunctionObj;
 
 // error related enums
@@ -36,7 +43,7 @@ typedef struct {
 StringObj* create_string_obj(const char* value, int length);
 StringObj* concat_strings(const char* value1, int length1, const char* value2, int length2);
 
-FunctionObj* create_func_obj(const char* value, int length);
+FunctionObj* create_func_obj(const char* value, int length, FunctionType type);
 
 
 ErrorObj* create_err_obj(const char* value, int length, ErrorType type);

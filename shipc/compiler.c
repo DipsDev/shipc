@@ -82,7 +82,7 @@ static void init_parser(Parser* parser) {
 	parser->hadError = false;
 	parser->panicMode = false;
 
-	parser->func = create_func_obj("main", 4);
+	parser->func = create_func_obj("main", 4, FN_SCRIPT);
 }
 
 static void advance(Scanner* scanner, Parser* parser) {
@@ -308,7 +308,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected open block in function declaration"); // eat the {
 	
 
-	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length);
+	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length, FN_FUNCTION);
 	FunctionObj* before_func = parser->func;
 	parser->func = obj;
 
