@@ -11,15 +11,28 @@
 #include "objects.h"
 
 #define STACK_MAX 512
+#define CALL_STACK_MAX 512
+
+
+typedef enum {
+    RESULT_SUCCESS,
+    RESULT_ERROR
+} InterpretResult;
+
+typedef struct {
+    FunctionObj* function;
+    uint8_t* ip;
+} StackFrame;
 
 typedef struct {
 	// pointers
-	uint8_t* ip; // instruction pointer
 	Value* sp; // stack pointer
+
+    unsigned int frameCount;
+    StackFrame callStack[CALL_STACK_MAX];
 
 	// objects
 	Value stack[STACK_MAX]; // value stack
-	Chunk* chunk;
 	HashMap* globals;
 
 } VM;

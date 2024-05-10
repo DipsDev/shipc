@@ -7,7 +7,7 @@
 #include "vm.h"
 #include "objects.h"
 
-static Value run (VM* vm, FunctionObj* script);
+static InterpretResult run (VM* vm);
 
 static void push(VM* vm, Value value) {
 	if ((size_t)(vm->sp - vm->stack) == STACK_MAX) {
@@ -27,7 +27,7 @@ static Value pop(VM* vm) {
 	return *vm->sp;
 }
 
-static Value runtime_error(const char* message, ErrorType type, ...) {
+static InterpretResult runtime_error(VM* vm, const char* message, ErrorType type, ...) {
     // creates an informative error message, and returns it
     char temp[256] = {0};
     va_list args;
@@ -35,14 +35,14 @@ static Value runtime_error(const char* message, ErrorType type, ...) {
     vsnprintf(temp, 255, message, args);
     va_end(args);
     ErrorObj* err = create_err_obj(temp, (int) strlen(temp), type);
-    return VAR_OBJ(err);
+    push(vm, VAR_OBJ(err));
+    return RESULT_ERROR;
 }
 
 
 void init_vm(VM* vm) {
-	// set the ip to null
-	vm->ip = NULL;
-
+	// set the frame count to 0
+    vm->frameCount = 0;
 	// set the sp to the beginning of the stack
 	vm->sp = vm->stack;
 
@@ -55,35 +55,37 @@ void free_vm(VM* vm) {
 }
 
 void interpret(VM* vm, FunctionObj* main_script) {
-    Value end_value = run(vm, main_script );
-    if(IS_ERROR(end_value)) {
-        ErrorObj* err_obj = (ErrorObj*) AS_OBJ(end_value);
+    // push the main script to the call stack
+    InterpretResult end_value = run(vm);
+    if(end_value == RESULT_ERROR) {
+        Value error_value = pop(vm);
+        ErrorObj* err_obj = (ErrorObj*) AS_OBJ(error_value);
         fprintf(stderr, "[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
         return;
     }
     print_value(pop(vm));
 }
 
-static Value run(VM* vm, FunctionObj* script) {
-#define READ_BYTE() *vm->ip++
-#define READ_CONSTANT() script->body.constants.arr[READ_BYTE()]
+static InterpretResult run(VM* vm) {
+    StackFrame* frame = &vm->callStack[vm->frameCount - 1];
+#define READ_BYTE() (*frame->ip)
+#define READ_CONSTANT() frame->function->body.constants.arr[READ_BYTE()]
 #define READ_SHORT() \
-	(vm->ip += 2, (uint16_t) ((vm->ip[-2] << 8) | vm->ip[-1]))
-
-
-	vm->chunk = &script->body;
-	vm->ip = vm->chunk->codes;
+	(frame->ip += 2, (uint16_t) ((frame->ip[-2] << 8) | frame->ip[-1]))
 
 	for (;;) {
 		uint8_t opcode = READ_BYTE();
 		switch (opcode) {
             case OP_RETURN: {
-                if (scope == 0) {
-                    return runtime_error("'return' outside of function", ERR_SYNTAX);
+                if (frame->function->type == FN_SCRIPT) {
+                    return runtime_error(vm, "'return' outside of function", ERR_SYNTAX);
                 }
-                return pop(vm);
+                // clear the current frame
+                // free_stack_frame(frame);
+                vm->frameCount--;
+
             }
-            case OP_HALT: return VAR_NIL;
+            case OP_HALT: return RESULT_SUCCESS;
 			case OP_CONSTANT: {
 				push(vm, READ_CONSTANT());
 				break;
@@ -91,7 +93,7 @@ static Value run(VM* vm, FunctionObj* script) {
 			case OP_NOT: {
 				Value value = pop(vm);
 				if (!IS_BOOL(value)) {
-					return runtime_error("'not' operator cannot be called on non boolean object", ERR_TYPE);
+					return runtime_error(vm, "'not' operator cannot be called on non boolean object", ERR_TYPE);
 				}
 				push(vm, VAR_BOOL(!AS_BOOL(value)));
 				break;
@@ -99,7 +101,7 @@ static Value run(VM* vm, FunctionObj* script) {
 			case OP_NEGATE: {
 				Value value = pop(vm);
 				if (!IS_NUMBER(value)) {
-                    return runtime_error("unary operator cannot be called on non number object", ERR_TYPE);
+                    return runtime_error(vm, "unary operator cannot be called on non number object", ERR_TYPE);
 				}
 				push(vm, VAR_NUMBER(-AS_NUMBER(value)));
 				break;
@@ -108,7 +110,7 @@ static Value run(VM* vm, FunctionObj* script) {
 				Value a = pop(vm);
 				Value b = pop(vm);
 				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
-					return runtime_error("* operator accepts only numbers", ERR_TYPE);
+					return runtime_error(vm, "* operator accepts only numbers", ERR_TYPE);
 
 				}
 				// simple multi by 2 optimiziation
@@ -135,14 +137,14 @@ static Value run(VM* vm, FunctionObj* script) {
 					push(vm, VAR_OBJ(concat));
 					break;
 				}
-				return runtime_error("unknown operands for '+' operator", ERR_TYPE);
+				return runtime_error(vm, "unknown operands for '+' operator", ERR_TYPE);
 
 			}
 			case OP_DIV: {
 				Value b = pop(vm);
 				Value a = pop(vm);
 				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
-					return runtime_error("/ operator accepts only numbers", ERR_TYPE);
+					return runtime_error(vm, "/ operator accepts only numbers", ERR_TYPE);
 				}
 				double mul = AS_NUMBER(a) / AS_NUMBER(b);
 				push(vm, VAR_NUMBER(mul));
@@ -152,7 +154,7 @@ static Value run(VM* vm, FunctionObj* script) {
 				Value b = pop(vm);
 				Value a = pop(vm);
 				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
-					return runtime_error("/ operator accepts only numbers", ERR_TYPE);
+					return runtime_error(vm, "/ operator accepts only numbers", ERR_TYPE);
 				}
 				double mul = AS_NUMBER(a) - AS_NUMBER(b);
 				push(vm, VAR_NUMBER(mul));
@@ -209,7 +211,7 @@ static Value run(VM* vm, FunctionObj* script) {
 				Value variable_name = READ_CONSTANT();
 
 				if (!IS_STRING(variable_name)) {
-					return runtime_error("expected variable name to be string", ERR_TYPE);
+					return runtime_error(vm, "expected variable name to be string", ERR_TYPE);
 				}
 				StringObj* obj = AS_STRING(variable_name);
 				put_node(vm->globals, obj->value, obj->length, var_value);
@@ -220,13 +222,13 @@ static Value run(VM* vm, FunctionObj* script) {
 				Value variable_name = READ_CONSTANT();
 
 				if (!IS_STRING(variable_name)) {
-					return runtime_error("expected variable name to be string", ERR_TYPE);
+					return runtime_error(vm, "expected variable name to be string", ERR_TYPE);
 				}
 				
 				StringObj* obj = AS_STRING(variable_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					return runtime_error("variable name '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
+					return runtime_error(vm, "variable name '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
 				}
 				var_node->value = var_value;
 				break;
@@ -234,12 +236,12 @@ static Value run(VM* vm, FunctionObj* script) {
 			case OP_LOAD_GLOBAL: {
 				Value variable_name = READ_CONSTANT();
 				if (!IS_STRING(variable_name)) {
-					return runtime_error("expected variable name to be string", ERR_TYPE);
+					return runtime_error(vm, "expected variable name to be string", ERR_TYPE);
 				}
 				StringObj* obj = AS_STRING(variable_name);
 				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
 				if (var_node == NULL) {
-					return runtime_error("variable '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
+					return runtime_error(vm, "variable '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
 				}
 				push(vm, var_node->value);
 				break;
@@ -247,12 +249,12 @@ static Value run(VM* vm, FunctionObj* script) {
 			case OP_CALL: {
 				Value func_name = pop(vm);
 				if (!IS_FUNCTION(func_name)) {
-					return runtime_error("object is not callable", ERR_TYPE);
+					return runtime_error(vm, "object is not callable", ERR_TYPE);
 				}
 				FunctionObj * obj = AS_FUNCTION(func_name);
 				HashNode* var_node = get_node(vm->globals, obj->name->value, obj->name->length);
 				if (var_node == NULL) {
-					return runtime_error("function '%.*s' is undefined", ERR_NAME, obj->name->length, obj->name->value);
+					return runtime_error(vm, "function '%.*s' is undefined", ERR_NAME, obj->name->length, obj->name->value);
 				}
                 uint8_t * jump_address = vm->ip;
                 // TODO: The run should NOT be recursive, but push the function to the call stack and make the run function execute the function at the top of the stack.
@@ -271,7 +273,7 @@ static Value run(VM* vm, FunctionObj* script) {
 
 			}
             default:
-                return runtime_error("unhandled op code %d", ERR_SYNTAX, opcode);
+                return runtime_error(vm, "unhandled op code %d", ERR_SYNTAX, opcode);
 		}
 	}
 #undef READ_SHORT
