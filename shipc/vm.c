@@ -18,6 +18,12 @@ static void push(VM* vm, Value value) {
 	vm->sp++;
 }
 
+static void free_stack_frame(StackFrame* frame) {
+    free(frame->ip);
+    free_object(&frame->function->obj);
+    free(frame);
+}
+
 static void push_frame(VM* vm, StackFrame frame) {
     if (vm->frameCount >= CALL_STACK_MAX) {
         printf("max frames reached");
@@ -95,11 +101,17 @@ static InterpretResult run(VM* vm) {
                     return runtime_error(vm, "'return' outside of function", ERR_SYNTAX);
                 }
                 // clear the current frame
-                // free_stack_frame(frame);
+                free_stack_frame(frame);
                 vm->frameCount--;
+                // set the new frame
+                frame = &vm->callStack[vm->frameCount - 1];
+                break;
 
             }
-            case OP_HALT: return RESULT_SUCCESS;
+            case OP_HALT: {
+                free_stack_frame(frame);
+                return RESULT_SUCCESS;
+            }
 			case OP_CONSTANT: {
 				push(vm, READ_CONSTANT());
 				break;
