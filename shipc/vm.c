@@ -18,6 +18,15 @@ static void push(VM* vm, Value value) {
 	vm->sp++;
 }
 
+static void push_frame(VM* vm, StackFrame frame) {
+    if (vm->frameCount >= CALL_STACK_MAX) {
+        printf("max frames reached");
+        exit(1);
+    }
+    vm->callStack[vm->frameCount] = frame;
+    vm->frameCount++;
+}
+
 static Value pop(VM* vm) {
 	if (vm->stack == vm->sp) {
 		printf("Empty stack");
@@ -56,6 +65,11 @@ void free_vm(VM* vm) {
 
 void interpret(VM* vm, FunctionObj* main_script) {
     // push the main script to the call stack
+    StackFrame main_frame;
+    main_frame.ip = main_script->body.codes;
+    main_frame.function = main_script;
+    push_frame(vm, main_frame);
+
     InterpretResult end_value = run(vm);
     if(end_value == RESULT_ERROR) {
         Value error_value = pop(vm);
@@ -68,7 +82,7 @@ void interpret(VM* vm, FunctionObj* main_script) {
 
 static InterpretResult run(VM* vm) {
     StackFrame* frame = &vm->callStack[vm->frameCount - 1];
-#define READ_BYTE() (*frame->ip)
+#define READ_BYTE() (*frame->ip++)
 #define READ_CONSTANT() frame->function->body.constants.arr[READ_BYTE()]
 #define READ_SHORT() \
 	(frame->ip += 2, (uint16_t) ((frame->ip[-2] << 8) | frame->ip[-1]))
@@ -202,7 +216,7 @@ static InterpretResult run(VM* vm) {
 				}
 				// if condition is false, jump
 				uint16_t jmp_size = READ_SHORT();
-				vm->ip += (int) jmp_size;
+				frame->ip += (int) jmp_size;
 				break;
 
 			}
@@ -256,20 +270,7 @@ static InterpretResult run(VM* vm) {
 				if (var_node == NULL) {
 					return runtime_error(vm, "function '%.*s' is undefined", ERR_NAME, obj->name->length, obj->name->value);
 				}
-                uint8_t * jump_address = vm->ip;
-                // TODO: The run should NOT be recursive, but push the function to the call stack and make the run function execute the function at the top of the stack.
-                Value return_value = run(vm, obj);
-                // if function was error, then error it up - currently
-                if (IS_ERROR(return_value)) {
-                    return return_value;
-                }
-
-                push(vm, return_value);
-
-                // return the jump address to the right place
-                vm->ip = jump_address;
-                vm->chunk = &script->body;
-                break;
+                return runtime_error(vm, "Functions calls are yet to be defined", ERR_SYNTAX);
 
 			}
             default:
