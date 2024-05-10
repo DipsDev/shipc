@@ -283,6 +283,9 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_return_statement(Parser* parser, Scanner* scanner) {
+    if (parser->func->type == FN_SCRIPT) {
+        error(parser, "invalid syntax at");
+    }
     advance(scanner, parser); // eat the return keyword
     if (parser->current.type == TOKEN_SEMICOLON) { // if no expression was after the return, return nil;
         write_chunk(current_chunk(parser), OP_NIL);
