@@ -19,9 +19,7 @@ static void push(VM* vm, Value value) {
 }
 
 static void free_stack_frame(StackFrame* frame) {
-    free(frame->ip);
     free_object(&frame->function->obj);
-    free(frame);
 }
 
 static void push_frame(VM* vm, StackFrame frame) {
@@ -83,7 +81,6 @@ void interpret(VM* vm, FunctionObj* main_script) {
         fprintf(stderr, "[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
         return;
     }
-    print_value(pop(vm));
 }
 
 static InterpretResult run(VM* vm) {
@@ -282,7 +279,11 @@ static InterpretResult run(VM* vm) {
 				if (var_node == NULL) {
 					return runtime_error(vm, "function '%.*s' is undefined", ERR_NAME, obj->name->length, obj->name->value);
 				}
-                return runtime_error(vm, "Functions calls are yet to be defined", ERR_SYNTAX);
+                StackFrame new_func;
+                new_func.function = obj;
+                new_func.ip = new_func.function->body.codes;
+                push_frame(vm, new_func);
+                break;
 
 			}
             default:
