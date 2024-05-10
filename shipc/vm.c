@@ -247,15 +247,12 @@ static Value run(VM* vm, FunctionObj* script, unsigned int scope) {
 			case OP_CALL: {
 				Value func_name = pop(vm);
 				if (!IS_FUNCTION(func_name)) {
-					return runtime_error("expected function to be a function", ERR_TYPE);
+					return runtime_error("object is not callable", ERR_TYPE);
 				}
 				FunctionObj * obj = AS_FUNCTION(func_name);
 				HashNode* var_node = get_node(vm->globals, obj->name->value, obj->name->length);
 				if (var_node == NULL) {
 					return runtime_error("function '%.*s' is undefined", ERR_NAME, obj->name->length, obj->name->value);
-				}
-				if (!IS_FUNCTION(var_node->value)) {
-					return runtime_error("object '%.*s' is not callable.", ERR_NAME, obj->name->length, obj->name->value);
 				}
                 uint8_t * jump_address = vm->ip;
                 // TODO: The run should NOT be recursive, but push the function to the call stack and make the run function execute the function at the top of the stack.
