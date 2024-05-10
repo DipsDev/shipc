@@ -258,6 +258,7 @@ static Value run(VM* vm, FunctionObj* script, unsigned int scope) {
 					return runtime_error("object '%.*s' is not callable.", ERR_NAME, obj->name->length, obj->name->value);
 				}
                 uint8_t * jump_address = vm->ip;
+                // TODO: The run should NOT be recursive, but push the function to the call stack and make the run function execute the function at the top of the stack.
                 Value return_value = run(vm, obj, scope + 1);
                 // if function was error, then error it up - currently
                 if (IS_ERROR(return_value)) {
