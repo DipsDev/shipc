@@ -59,7 +59,6 @@ bool compare_objects(Obj* obj1, Obj* obj2) {
 }
 // <------------------------------------>
 
-
 static char* copy_string(const char* value, int length) {
 	char* str_value = (char*)malloc(length + 1);
 	if (str_value == NULL) {

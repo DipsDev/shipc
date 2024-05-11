@@ -149,8 +149,9 @@ static InterpretResult run(VM* vm) {
 					push(vm, VAR_NUMBER(mul));
 					break;
 				}
-				if (IS_STRING(a) && IS_STRING(b)) {
-					// should return a + b;
+                // if one of the values is a string, then cast everything to a string and concat it.
+				if (IS_STRING(a) || IS_STRING(b)) {
+                    // TODO: Implement string concatenation with other types
 					StringObj* str_a = AS_STRING(a);
 					StringObj* str_b = AS_STRING(b);
 
