@@ -16,6 +16,8 @@ typedef struct {
 	Token previous;
 
 	FunctionObj* func;
+    HashMap* varMap;
+    unsigned int varCount;
 
 	bool hadError;
 	bool panicMode;
@@ -23,6 +25,27 @@ typedef struct {
 
 static Chunk* current_chunk(Parser* parser) {
 	return &parser->func->body;
+}
+
+static HashNode* get_variable(Parser* parser, char* name, int length) {
+    return get_node(parser->varMap, name, length);
+}
+
+static unsigned int add_variable(Parser* parser, char* name, int length) {
+    HashNode* nd_exist = get_node(parser->varMap, name, length);
+    if (nd_exist != NULL) {
+        return nd_exist->value;
+    }
+
+    Local local;
+    local.name = name;
+    local.value = VAR_NIL;
+    local.length = length;
+    parser->func->locals[parser->varCount] = local;
+
+    put_node(parser->varMap, name, length, parser->varCount);
+    parser->varCount++;
+    return parser->varCount-1;
 }
 
 
@@ -81,6 +104,10 @@ static void error_at_current(Parser* parser) {
 static void init_parser(Parser* parser) {
 	parser->hadError = false;
 	parser->panicMode = false;
+
+    parser->varCount = 0;
+    parser->varMap = (HashMap*) malloc(sizeof (HashMap));
+    create_variable_map(parser->varMap);
 
 	parser->func = create_func_obj("main", 4, FN_SCRIPT);
 }
@@ -254,19 +281,23 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; ats");
-	
-	// create the string object
-	StringObj* obj = create_string_obj(variable_ident.start, variable_ident.length);
-	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
-	write_bytes(current_chunk(parser), OP_STORE_GLOBAL, index);
+
+    // add the variable
+    unsigned int var_index = add_variable(parser, variable_ident.start, variable_ident.length);
+    write_bytes(current_chunk(parser), OP_STORE_GLOBAL, var_index);
 }
 
 
 static void parse_identifier(Parser* parser, Scanner* scanner) {
 	// add the ident string to the pool so we can either call or load it
-	StringObj* obj = create_string_obj(parser->previous.start, parser->previous.length);
-    uint8_t string_index = add_constant(current_chunk(parser), VAR_OBJ(obj));
-    write_bytes(current_chunk(parser), OP_LOAD_GLOBAL, string_index);
+    HashNode* var = get_variable(parser, parser->previous.start, parser->previous.length);
+    if (var == NULL) {
+        StringObj *obj = create_string_obj(parser->previous.start, parser->previous.length);
+        uint8_t string_index = add_constant(current_chunk(parser), VAR_OBJ(obj));
+        write_bytes(current_chunk(parser), OP_LOAD_GLOBAL, string_index);
+    } else {
+        write_bytes(current_chunk(parser), OP_LOAD_LOCAL, var->value);
+    }
 
     if (parser->current.type != TOKEN_LEFT_PAREN) {
         return;
@@ -316,6 +347,13 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	FunctionObj* before_func = parser->func;
 	parser->func = obj;
 
+    // set the variable scope
+    HashMap* saved_map = parser->varMap;
+    unsigned int saved_count = parser->varCount;
+
+    parser->varMap = (HashMap*) malloc(sizeof (HashMap));
+    create_variable_map(parser->varMap);
+
 
 	while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_RIGHT_BRACE) {
 		
@@ -323,6 +361,9 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	}
     write_bytes(current_chunk(parser), OP_NIL, OP_RETURN);
 
+    parser->varCount = saved_count;
+    parser->varMap = saved_map;
+    free_hash_map(parser->varMap);
 	parser->func = before_func;
 	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block in function declaration"); // eat the }
 
@@ -331,7 +372,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	write_bytes(current_chunk(parser), OP_CONSTANT, index);
 
 	// register the function name
-	uint8_t name_index = add_constant(current_chunk(parser), VAR_OBJ((obj->name)));
+    unsigned int name_index = add_variable(parser, obj->name->value, obj->name->length);
 	write_bytes(current_chunk(parser), OP_STORE_GLOBAL, name_index);
 
 
@@ -340,6 +381,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 
 
 static void parse_var_assignment(Parser* parser, Scanner* scanner) {
+    printf("NOT IMPLEMENTED, VAR ASSIGN");
 	if (parser->current.type != TOKEN_EQUAL) {
 		return parse_identifier(parser, scanner);
 	}

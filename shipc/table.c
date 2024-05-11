@@ -26,7 +26,7 @@ static unsigned hash_function(char* name, int length) {
 	return hash; // & (capacity - 1); calculate the modulo of the capacity
 }
 
-static HashNode* create_node(char* name, Value val) {
+static HashNode* create_node(char* name, unsigned int val) {
 	HashNode* node = (HashNode*)malloc(sizeof(HashNode));
 	if (node == NULL) {
 		printf("Failed to allocate node");
@@ -35,6 +35,7 @@ static HashNode* create_node(char* name, Value val) {
 	node->name = name;
 	node->value = val;
 	node->next = NULL;
+    return node;
 }
 
 static void put_node_t(char* name, int name_len, int capacity, HashNode** arr, HashNode* nd) {
@@ -74,7 +75,7 @@ static void resize_map(HashMap* map) {
 
 }
 
-void put_node(HashMap* map,char* name,int name_len, Value val) {
+void put_node(HashMap* map,char* name,int name_len, unsigned int val) {
 	HashNode* nd = create_node(name, val);
 	if ((double)map->count / map->capacity >= 0.75) {
 		resize_map(map);
@@ -99,11 +100,8 @@ void free_hash_map(HashMap* map) {
 		}
 		HashNode* pos = map->arr[i];
 		while (pos != NULL) {
-			if (IS_OBJ(pos->value)) {
-				free_object(AS_OBJ(pos->value));
-			}
-
 			HashNode* before = pos->next;
+            free(pos->name);
 			free(pos);
 			pos = before;
 		}

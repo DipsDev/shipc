@@ -59,12 +59,9 @@ void init_vm(VM* vm) {
 	// set the sp to the beginning of the stack
 	vm->sp = vm->stack;
 
-	vm->globals = (HashMap*) malloc(sizeof(HashMap));
-	create_variable_map(vm->globals);
 }
 
 void free_vm(VM* vm) {
-	free_hash_map(vm->globals);
 }
 
 void interpret(VM* vm, FunctionObj* main_script) {
@@ -249,20 +246,7 @@ static InterpretResult run(VM* vm) {
 				break;
 			}
 			case OP_ASSIGN_GLOBAL: {
-				Value var_value = pop(vm);
-				Value variable_name = READ_CONSTANT();
-
-				if (!IS_STRING(variable_name)) {
-					return runtime_error(vm, "expected variable name to be string", ERR_TYPE);
-				}
-				
-				StringObj* obj = AS_STRING(variable_name);
-				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
-				if (var_node == NULL) {
-					return runtime_error(vm, "variable name '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
-				}
-				var_node->value = var_value;
-				break;
+                return runtime_error(vm, "variable assignment is yet to be implemented", ERR_SYNTAX);
 			}
 			case OP_LOAD_GLOBAL: {
 				Value variable_name = READ_CONSTANT();

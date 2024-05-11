@@ -33,7 +33,6 @@ typedef struct {
 
 	// objects
 	Value stack[STACK_MAX]; // value stack
-	HashMap* globals;
 
 } VM;
 

@@ -3,10 +3,11 @@
 #define SHIP_TABLE_H_
 
 #include "value.h"
+#include "objects.h"
 
 typedef struct {
 	char* name;
-	Value value;
+	unsigned int value;
 	struct HashNode* next;
 } HashNode;
 
@@ -17,7 +18,7 @@ typedef struct {
 } HashMap;
 
 
-void put_node(HashMap* map, char* name, int name_len, Value val);
+void put_node(HashMap* map, char* name, int name_len, unsigned int val);
 void create_variable_map(HashMap* mp);
 void free_hash_map(HashMap* map);
 HashNode* get_node(HashMap* map, char* name, int name_len);

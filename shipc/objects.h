@@ -19,10 +19,18 @@ typedef enum {
 } FunctionType;
 
 typedef struct {
+    char* name;
+    int length;
+    Value value;
+} Local;
+
+typedef struct {
 	Obj obj;
 	Chunk body;
 	StringObj* name;
     FunctionType type;
+
+    Local locals[UINT8_MAX]; // currently hardcoded
 } FunctionObj;
 
 // error related enums
