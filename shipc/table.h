@@ -7,6 +7,7 @@
 
 typedef struct {
 	char* name;
+    size_t len;
 	unsigned int value;
 	struct HashNode* next;
 } HashNode;

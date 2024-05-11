@@ -381,10 +381,10 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 
 
 static void parse_var_assignment(Parser* parser, Scanner* scanner) {
-    printf("NOT IMPLEMENTED, VAR ASSIGN");
 	if (parser->current.type != TOKEN_EQUAL) {
 		return parse_identifier(parser, scanner);
 	}
+    printf("!!!NOT IMPLEMENTED, VAR ASSIGN!!!\n");
 	Token variable_ident = parser->previous;
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 

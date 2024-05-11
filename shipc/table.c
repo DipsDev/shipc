@@ -12,7 +12,7 @@
 void create_variable_map(HashMap* mp) {
 	mp->capacity = 8;
 	mp->count = 0;
-	mp->arr = calloc(mp->capacity, sizeof(HashNode*));
+    mp->arr = calloc(mp->capacity, sizeof(HashNode*));
 }
 
 static unsigned hash_function(char* name, int length) {
@@ -26,13 +26,14 @@ static unsigned hash_function(char* name, int length) {
 	return hash; // & (capacity - 1); calculate the modulo of the capacity
 }
 
-static HashNode* create_node(char* name, unsigned int val) {
+static HashNode* create_node(char* name, size_t len, unsigned int val) {
 	HashNode* node = (HashNode*)malloc(sizeof(HashNode));
 	if (node == NULL) {
 		printf("Failed to allocate node");
 		exit(1);
 	}
 	node->name = name;
+    node->len = len;
 	node->value = val;
 	node->next = NULL;
     return node;
@@ -65,7 +66,7 @@ static void resize_map(HashMap* map) {
 		HashNode* pos = map->arr[i];
 		while (pos != NULL) {
 			put_node_t(pos->name, strlen(pos->name), new_capacity, temp_, pos);
-			pos = pos->next;
+			pos = (HashNode *) pos->next;
 		}
 	}
 
@@ -76,7 +77,7 @@ static void resize_map(HashMap* map) {
 }
 
 void put_node(HashMap* map,char* name,int name_len, unsigned int val) {
-	HashNode* nd = create_node(name, val);
+	HashNode* nd = create_node(name, name_len, val);
 	if ((double)map->count / map->capacity >= 0.75) {
 		resize_map(map);
 	}
@@ -86,7 +87,7 @@ void put_node(HashMap* map,char* name,int name_len, unsigned int val) {
 HashNode* get_node(HashMap* map, char* name, int name_len) {
 	unsigned index = hash_function(name, name_len) & (map->capacity - 1); // calculate the index
 	HashNode* pos = map->arr[index];
-	while (pos != NULL && strcmp(name, pos->name) != 0) {
+	while (pos != NULL && strncmp(name, pos->name, pos->len) != 0) {
 		pos = pos->next;
 	}
 	return pos;
@@ -100,12 +101,13 @@ void free_hash_map(HashMap* map) {
 		}
 		HashNode* pos = map->arr[i];
 		while (pos != NULL) {
-			HashNode* before = pos->next;
+			HashNode* before = (HashNode *) pos->next;
             free(pos->name);
 			free(pos);
 			pos = before;
 		}
 	}
+    free(map->arr);
 	free(map);
 }
 

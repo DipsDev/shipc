@@ -233,50 +233,23 @@ static InterpretResult run(VM* vm) {
 			}
 			case OP_STORE_GLOBAL: {
 				Value var_value = pop(vm);
-				Value variable_name = READ_CONSTANT();
-
-				if (!IS_STRING(variable_name)) {
-					return runtime_error(vm, "expected variable name to be string", ERR_TYPE);
-				}
-				StringObj* obj = AS_STRING(variable_name);
-                if (get_node(vm->globals, obj->value, obj->length) != NULL) {
-                    return runtime_error(vm, "variable '%.*s' is already defined in the current scope", ERR_NAME, obj->length, obj->value);
-                }
-				put_node(vm->globals, obj->value, obj->length, var_value);
+				uint8_t variable_index = READ_BYTE();
+                frame->function->locals[variable_index].value = var_value;
 				break;
 			}
 			case OP_ASSIGN_GLOBAL: {
                 return runtime_error(vm, "variable assignment is yet to be implemented", ERR_SYNTAX);
 			}
+            case OP_LOAD_LOCAL: {
+                uint8_t variable_index = READ_BYTE();
+                push(vm, frame->function->locals[variable_index].value);
+                break;
+            }
 			case OP_LOAD_GLOBAL: {
-				Value variable_name = READ_CONSTANT();
-				if (!IS_STRING(variable_name)) {
-					return runtime_error(vm, "expected variable name to be string", ERR_TYPE);
-				}
-				StringObj* obj = AS_STRING(variable_name);
-				HashNode* var_node = get_node(vm->globals, obj->value, obj->length);
-				if (var_node == NULL) {
-					return runtime_error(vm, "variable '%.*s' is undefined", ERR_NAME, obj->length, obj->value);
-				}
-				push(vm, var_node->value);
-				break;
+                return runtime_error(vm, "global loading is not yet supported", ERR_SYNTAX);
 			}
 			case OP_CALL: {
-				Value func_name = pop(vm);
-				if (!IS_FUNCTION(func_name)) {
-					return runtime_error(vm, "object is not callable", ERR_TYPE);
-				}
-				FunctionObj * obj = AS_FUNCTION(func_name);
-				HashNode* var_node = get_node(vm->globals, obj->name->value, obj->name->length);
-				if (var_node == NULL) {
-					return runtime_error(vm, "function '%.*s' is undefined", ERR_NAME, obj->name->length, obj->name->value);
-				}
-                StackFrame new_func;
-                new_func.function = obj;
-                new_func.ip = new_func.function->body.codes;
-                push_frame(vm, new_func);
-                frame = &new_func;
-                break;
+                return runtime_error(vm, "function calling is not yet supported", ERR_SYNTAX);
 
 			}
             default:

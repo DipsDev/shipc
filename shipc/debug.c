@@ -29,10 +29,10 @@ static void print_obj(Chunk* chunk, Value val, int offset, char* message) {
     }
 }
 
-static int variable_instruction(Chunk* chunk, char* op_code, int offset) {
-	uint8_t index = chunk->codes[offset + 1];
-	Value val = chunk->constants.arr[index];
-    print_obj(chunk, val, offset, op_code);
+static int variable_instruction(FunctionObj * func, char* op_code, int offset) {
+	uint8_t index = func->body.codes[offset + 1];
+    Local local_var = func->locals[index];
+    printf("| %04d %s %u (%.*s) |\n", offset, op_code, index, local_var.length, local_var.name);
 
 	return 2;
 }
@@ -56,10 +56,11 @@ static int jump_instruction(Chunk* chunk, int offset) {
 	return 3;
 }
 
-static int disassemble_instruction(Chunk* chunk, int offset) {
-	uint8_t code = chunk->codes[offset];
+static int disassemble_instruction(FunctionObj * func, int offset) {
+	uint8_t code = func->body.codes[offset];
 	switch (code) {
 		case OP_HALT: return simple_instruction("OP_HALT", offset);
+        case OP_LOAD_LOCAL: return variable_instruction(func, "OP_LOAD_LOCAL", offset);
 		case OP_NEGATE: return simple_instruction("OP_NEGATE", offset);
 		case OP_ADD: return simple_instruction("OP_ADD", offset);
 		case OP_SUB: return simple_instruction("OP_SUB", offset);
@@ -70,14 +71,14 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 		case OP_NOT: return simple_instruction("OP_NOT", offset);
 		case OP_TRUE: return simple_instruction("OP_TRUE", offset);
 		case OP_NIL:return simple_instruction("OP_NIL", offset);
-		case OP_ASSIGN_GLOBAL: return variable_instruction(chunk, "OP_ASSIGN_GLOBAL", offset);
-		case OP_STORE_GLOBAL: return variable_instruction(chunk, "OP_STORE_GLOBAL", offset);
-		case OP_LOAD_GLOBAL: return variable_instruction(chunk, "OP_LOAD_GLOBAL", offset);
-		case OP_POP_JUMP_IF_FALSE: return jump_instruction(chunk, offset);
+		case OP_ASSIGN_GLOBAL: return variable_instruction(func, "OP_ASSIGN_GLOBAL", offset);
+		case OP_STORE_GLOBAL: return variable_instruction(func, "OP_STORE_GLOBAL", offset);
+		case OP_LOAD_GLOBAL: return variable_instruction(func, "OP_LOAD_GLOBAL", offset);
+		case OP_POP_JUMP_IF_FALSE: return jump_instruction(&func->body, offset);
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
         case OP_RETURN: return simple_instruction("OP_RETURN", offset);
-		case OP_CONSTANT: return constant_instruction(chunk, offset);
+		case OP_CONSTANT: return constant_instruction(&func->body, offset);
         default: return 1; // should be unreachable
 
 
@@ -87,7 +88,7 @@ static int disassemble_instruction(Chunk* chunk, int offset) {
 void disassemble_func(FunctionObj* obj) {
 	printf("=== disassembled %.*s script l(%i) ===\n", obj->name->length, obj->name->value, obj->body.count);
 	for (int i = 0; i < obj->body.count;) {
-		i += disassemble_instruction(&obj->body, i);
+		i += disassemble_instruction(obj, i);
 	}
     printf("=== end function %.*s ===\n", obj->name->length, obj->name->value);
 }
