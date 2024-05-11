@@ -284,7 +284,7 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 
     // add the variable
     unsigned int var_index = add_variable(parser, variable_ident.start, variable_ident.length);
-    write_bytes(current_chunk(parser), OP_STORE_GLOBAL, var_index);
+    write_bytes(current_chunk(parser), OP_STORE_FAST, var_index);
 }
 
 
@@ -373,7 +373,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 
 	// register the function name
     unsigned int name_index = add_variable(parser, obj->name->value, obj->name->length);
-	write_bytes(current_chunk(parser), OP_STORE_GLOBAL, name_index);
+	write_bytes(current_chunk(parser), OP_STORE_FAST, name_index);
 
 
 

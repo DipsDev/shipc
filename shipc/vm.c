@@ -231,7 +231,7 @@ static InterpretResult run(VM* vm) {
 				break;
 
 			}
-			case OP_STORE_GLOBAL: {
+			case OP_STORE_FAST: {
 				Value var_value = pop(vm);
 				uint8_t variable_index = READ_BYTE();
                 frame->function->locals[variable_index].value = var_value;

@@ -15,7 +15,7 @@ typedef enum { // available op codes
 	OP_NIL,
 	OP_ADD,
 	OP_SUB,
-	OP_STORE_GLOBAL,
+	OP_STORE_FAST,
     OP_LOAD_LOCAL,
 	OP_LOAD_GLOBAL,
 	OP_ASSIGN_GLOBAL,
