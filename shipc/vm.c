@@ -231,6 +231,11 @@ static InterpretResult run(VM* vm) {
 				break;
 
 			}
+            case OP_JUMP_BACKWARD: {
+                uint16_t jmp_size = READ_SHORT();
+                frame->ip -= (int) jmp_size;
+                break;
+            }
 			case OP_STORE_FAST: {
 				Value var_value = pop(vm);
 				uint8_t variable_index = READ_BYTE();

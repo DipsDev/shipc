@@ -4,6 +4,8 @@
 #include "vm.h"
 #include <stdlib.h>
 
+#include <time.h>
+
 
 static char* read_source_code() {
     // open the file
@@ -34,17 +36,23 @@ static char* read_source_code() {
 }
 
 int main() {
+    clock_t t;
+    t = clock();
 	FunctionObj* compiled_func = compile(read_source_code());
 	if (compiled_func == NULL) {
 		exit(1);
 	}
-	disassemble_func(compiled_func);
+	// disassemble_func(compiled_func);
 
 	VM vm;
 	init_vm(&vm);
 	interpret(&vm, compiled_func);
 
 	free_vm(&vm);
+
+    t = clock() - t;
+    double time_taken = ((double) t / CLOCKS_PER_SEC);
+    printf("Program took %f seconds to execute\n", time_taken);
 
 
 

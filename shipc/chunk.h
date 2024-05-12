@@ -20,6 +20,7 @@ typedef enum { // available op codes
 	OP_LOAD_GLOBAL,
 	OP_ASSIGN_GLOBAL,
     OP_ASSIGN_LOCAL,
+    OP_JUMP_BACKWARD,
 	OP_DIV,
     OP_RETURN,
 	OP_SHOW_TOP,

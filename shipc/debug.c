@@ -82,7 +82,9 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_NIL:return simple_instruction("OP_NIL", offset);
 		case OP_STORE_FAST: return variable_instruction(func, "OP_STORE_FAST", offset);
 		case OP_LOAD_GLOBAL: return global_variable_instruction(func, "OP_LOAD_GLOBAL", offset);
-		case OP_POP_JUMP_IF_FALSE: return jump_instruction(&func->body, offset);
+		case OP_POP_JUMP_IF_FALSE:
+        case OP_JUMP_BACKWARD: return jump_instruction(&func->body, offset);
+        case OP_SHOW_TOP: return simple_instruction("OP_SHOW_TOP", offset);
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
         case OP_RETURN: return simple_instruction("OP_RETURN", offset);

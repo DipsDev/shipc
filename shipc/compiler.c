@@ -437,6 +437,48 @@ static void parse_global_statement(Parser* parser, Scanner* scanner) {
 
 }
 
+static void parse_while_statement(Parser* parser, Scanner* scanner) {
+    advance(scanner, parser); // eat the if keyword
+
+    // save the before bool expr
+    int before_bool = current_chunk(parser)->count;
+
+    // parse the bool expr
+    parse_expression(parser, scanner);
+
+    // add a temp value
+    write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE);
+
+    // save the value before the body
+    int offset = current_chunk(parser)->count;
+    write_bytes(current_chunk(parser), 0xff, 0xff);
+
+    expect(scanner, parser, TOKEN_LEFT_BRACE, "expected { after if expression at"); // expect open block after boolean expression
+    while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
+        // parse the body of the if statement
+        parse_statement(parser, scanner);
+    }
+    // expect user closing the if body
+    expect(scanner, parser, TOKEN_RIGHT_BRACE, "expected } after open block at");
+
+    // calculate the new size of the body, and modify the jmp size
+    int after_body = current_chunk(parser)->count;
+    int body_size = after_body - offset - 1; // subtract 2 because the if and the value
+    if (body_size > UINT16_MAX) {
+        error(parser, "max jump length exceeded");
+    }
+
+    // set the new size
+    current_chunk(parser)->codes[offset] = (body_size >> 8) & 0xff;
+    current_chunk(parser)->codes[offset + 1] = body_size & 0xff;
+
+    // set the jump to the prev
+    write_chunk(current_chunk(parser), OP_JUMP_BACKWARD);
+    int total_loop_jump_size = after_body - before_bool + 3;
+    write_bytes(current_chunk(parser), (total_loop_jump_size >> 8) & 0xff, total_loop_jump_size & 0xff);
+
+}
+
 static void parse_statement(Parser* parser, Scanner* scanner) {
 	// parse statements that do not return anything
 	// for ex: call(a,b,c);;
@@ -447,6 +489,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
 	case TOKEN_FN: return parse_func_statement(parser, scanner);
     case TOKEN_RETURN: return parse_return_statement(parser, scanner);
     case TOKEN_GLOBAL: return parse_global_statement(parser, scanner);
+    case TOKEN_WHILE: return parse_while_statement(parser, scanner);
 	}
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
