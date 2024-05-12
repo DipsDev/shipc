@@ -245,6 +245,12 @@ static InterpretResult run(VM* vm) {
                 push(vm, frame->function->locals[variable_index].value);
                 break;
             }
+            case OP_ASSIGN_LOCAL: {
+                Value val = pop(vm);
+                uint8_t variable_index = READ_BYTE();
+                frame->function->locals[variable_index].value = val;
+                break;
+            }
 			case OP_LOAD_GLOBAL: {
                 Value  var_name = READ_CONSTANT();
                 if (!IS_STRING(var_name)) {

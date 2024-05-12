@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "compiler.h"
 #include "token.h"
@@ -95,6 +96,14 @@ static void parse_expression(Parser* parser, Scanner* scanner);
 static void error(Parser* parser, const char* string) {
 	fprintf(stderr, "[ERROR] %s '%.*s'\n", string, parser->current.length, parser->current.start);
 	parser->hadError = true;
+}
+
+static void custom_error(Parser* parser, const char* string, ...) {
+    va_list args;
+    va_start(args, string);
+    vfprintf(stderr, string, args);
+    va_end(args);
+    parser->hadError = true;
 }
 
 static void error_at_current(Parser* parser) {
@@ -397,16 +406,18 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 	if (parser->current.type != TOKEN_EQUAL) {
 		return parse_identifier(parser, scanner);
 	}
-    printf("!!!NOT IMPLEMENTED, VAR ASSIGN!!!\n");
+    write_chunk(current_chunk(parser), OP_NIL);
 	Token variable_ident = parser->previous;
+    HashNode* stored_variable = get_variable(parser, variable_ident.start, variable_ident.length);
+    if (stored_variable == NULL) {
+        custom_error(parser, "variable '%.*s' is not defined in the current scope. did you mean 'glob %.*s = ...'", variable_ident.length, variable_ident.start, variable_ident.length, variable_ident.start);
+        exit(1);
+    }
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 
-	//// create the string object
-	StringObj* obj = create_string_obj(variable_ident.start, variable_ident.length);
-	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
-	write_bytes(current_chunk(parser), OP_ASSIGN_GLOBAL, index);
+	write_bytes(current_chunk(parser), OP_ASSIGN_LOCAL, stored_variable->value);
 
 }
 

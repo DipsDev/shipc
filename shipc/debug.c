@@ -76,6 +76,7 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_FALSE: return simple_instruction("OP_FALSE", offset);
 		case OP_CALL: return simple_instruction("OP_CALL", offset);
 		case OP_NOT: return simple_instruction("OP_NOT", offset);
+        case OP_ASSIGN_LOCAL: return variable_instruction(func, "OP_ASSIGN_LOCAL", offset);
 		case OP_TRUE: return simple_instruction("OP_TRUE", offset);
 		case OP_NIL:return simple_instruction("OP_NIL", offset);
 		case OP_ASSIGN_GLOBAL: return variable_instruction(func, "OP_ASSIGN_GLOBAL", offset);
