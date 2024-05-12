@@ -276,6 +276,14 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 	// var x = 5;
 	advance(scanner, parser); // eat the var keyword
 	Token variable_ident = parser->current;
+
+    // check if variable is already defined in the current scope
+    if(get_variable(parser, variable_ident.start, variable_ident.length) != NULL) {
+        error(parser, "redeclaration of variable at");
+        exit(1);
+    }
+
+
 	advance(scanner, parser);
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 
