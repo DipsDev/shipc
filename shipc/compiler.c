@@ -374,6 +374,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
     write_bytes(current_chunk(parser), OP_NIL, OP_RETURN);
 
     free_hash_map(parser->varMap);
+    parser->func->localCount = parser->varCount;
     parser->varCount = saved_count;
     parser->varMap = saved_map;
 	parser->func = before_func;
@@ -436,6 +437,9 @@ static void parse_expression(Parser* parser, Scanner* scanner) {
 static void end_compile(Parser* parser, Scanner* scanner) {
 	if (parser->current.type == TOKEN_EOF) {
 		write_chunk(current_chunk(parser), OP_HALT);
+
+        parser->func->localCount = parser->varCount;
+
 		return;
 	}
 	error(parser, "expected EOF at end of file got");

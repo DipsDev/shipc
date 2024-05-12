@@ -31,6 +31,7 @@ typedef struct {
     FunctionType type;
 
     Local locals[UINT8_MAX]; // currently hardcoded
+    unsigned int localCount;
 } FunctionObj;
 
 // error related enums

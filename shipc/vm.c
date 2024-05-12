@@ -246,7 +246,26 @@ static InterpretResult run(VM* vm) {
                 break;
             }
 			case OP_LOAD_GLOBAL: {
-                return runtime_error(vm, "global loading is not yet supported", ERR_SYNTAX);
+                Value  var_name = READ_CONSTANT();
+                if (!IS_STRING(var_name)) {
+                    return runtime_error(vm, "global variable should be a string.", ERR_SYNTAX);
+                }
+                StringObj* var_str = AS_STRING(var_name);
+                // loop in other frames for the value until found. this is why local variables are faster than globals;
+                for (int i = vm->frameCount - 2; i >= 0; i--) {
+                    StackFrame* curr = &vm->callStack[i];
+                    // iterate over the function locals and search for the value
+                    for(int j = 0; j< curr->function->localCount; j++) {
+                        Local current_local = curr->function->locals[j];
+                        if (current_local.length == var_str->length && strncmp(current_local.name, var_str->value, current_local.length) == 0) {
+                            push(vm, current_local.value);
+                            goto var_found;
+                        }
+                    }
+                }
+                return runtime_error(vm, "variable '%.*s' is not defined", ERR_NAME, var_str->length, var_str->value);
+                var_found:
+                    break;
 			}
 			case OP_CALL: {
                 Value func_value = pop(vm);

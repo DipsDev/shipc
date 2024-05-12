@@ -37,6 +37,13 @@ static int variable_instruction(FunctionObj * func, char* op_code, int offset) {
 	return 2;
 }
 
+static int global_variable_instruction(FunctionObj* func, char* op_code, int offset) {
+    uint8_t index = func->body.codes[offset + 1];
+    Value var = func->body.constants.arr[index];
+    printf("| %04d %s %u (%.*s)\n", offset, op_code, index, AS_STRING(var)->length, AS_STRING(var)->value);
+    return 2;
+}
+
 static int constant_instruction(Chunk* chunk, int offset) {
 	uint8_t index = chunk->codes[offset + 1];
 	Value val = chunk->constants.arr[index];
@@ -73,7 +80,7 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_NIL:return simple_instruction("OP_NIL", offset);
 		case OP_ASSIGN_GLOBAL: return variable_instruction(func, "OP_ASSIGN_GLOBAL", offset);
 		case OP_STORE_FAST: return variable_instruction(func, "OP_STORE_FAST", offset);
-		case OP_LOAD_GLOBAL: return variable_instruction(func, "OP_LOAD_GLOBAL", offset);
+		case OP_LOAD_GLOBAL: return global_variable_instruction(func, "OP_LOAD_GLOBAL", offset);
 		case OP_POP_JUMP_IF_FALSE: return jump_instruction(&func->body, offset);
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
