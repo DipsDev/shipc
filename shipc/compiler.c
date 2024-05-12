@@ -422,6 +422,21 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 }
 
 
+static void parse_global_statement(Parser* parser, Scanner* scanner) {
+    advance(scanner, parser); // eat the glob keyword
+    Token variable_ident = parser->current;
+    advance(scanner, parser);
+    expect(scanner, parser, TOKEN_EQUAL, "expected '=' after global assignment at");
+
+    parse_precedence(parser, scanner, PREC_OR);
+    expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
+
+    StringObj* obj =create_string_obj(variable_ident.start, variable_ident.length);
+    uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
+    write_bytes(current_chunk(parser), OP_ASSIGN_GLOBAL, index);
+
+}
+
 static void parse_statement(Parser* parser, Scanner* scanner) {
 	// parse statements that do not return anything
 	// for ex: call(a,b,c);;
@@ -431,6 +446,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
 	case TOKEN_VAR: return parse_variable(parser, scanner);
 	case TOKEN_FN: return parse_func_statement(parser, scanner);
     case TOKEN_RETURN: return parse_return_statement(parser, scanner);
+    case TOKEN_GLOBAL: return parse_global_statement(parser, scanner);
 	}
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");

@@ -238,7 +238,24 @@ static InterpretResult run(VM* vm) {
 				break;
 			}
 			case OP_ASSIGN_GLOBAL: {
-                return runtime_error(vm, "variable assignment is yet to be implemented", ERR_SYNTAX);
+                Value  var_name = READ_CONSTANT();
+                if (!IS_STRING(var_name)) {
+                    return runtime_error(vm, "global variable should be a string.", ERR_SYNTAX);
+                }
+                StringObj* var_str = AS_STRING(var_name);
+                // loop in other frames for the value until found. this is why local variables are faster than globals;
+                for (int i = vm->frameCount - 2; i >= 0; i--) {
+                    StackFrame* curr = &vm->callStack[i];
+                    // iterate over the function locals and search for the value
+                    for(int j = 0; j< curr->function->localCount; j++) {
+                        Local current_local = curr->function->locals[j];
+                        if (current_local.length == var_str->length && strncmp(current_local.name, var_str->value, current_local.length) == 0) {
+                            curr->function->locals[j].value = pop(vm);
+                            goto var_found;
+                        }
+                    }
+                }
+                return runtime_error(vm, "variable '%.*s' is not defined", ERR_NAME, var_str->length, var_str->value);
 			}
             case OP_LOAD_LOCAL: {
                 uint8_t variable_index = READ_BYTE();

@@ -118,6 +118,7 @@ static TokenType identifier_type(Scanner* scanner) {
 		case 'n': return reserved_keywords(scanner, 2, "il", TOKEN_NIL);
 		case 'i': return reserved_keywords(scanner, 1, "f", TOKEN_IF);
 		case 'p': return reserved_keywords(scanner, 4, "rint", TOKEN_PRINT);
+        case 'g': return reserved_keywords(scanner, 3, "lob", TOKEN_GLOBAL);
 		default:
 			return TOKEN_IDENTIFIER;
 	}
