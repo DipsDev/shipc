@@ -8,7 +8,7 @@
 static char* read_source_code() {
     // open the file
     FILE *fptr;
-    fptr = fopen("C:\\Users\\idoge\\Desktop\\main.ship", "r");
+    fptr = fopen("../main.ship", "r");
 
     // if couldn't open file, throw an error
     if (fptr == NULL) {
