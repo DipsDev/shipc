@@ -102,7 +102,6 @@ void free_hash_map(HashMap* map) {
 		HashNode* pos = map->arr[i];
 		while (pos != NULL) {
 			HashNode* before = (HashNode *) pos->next;
-            free(pos->name);
 			free(pos);
 			pos = before;
 		}

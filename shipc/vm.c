@@ -249,7 +249,17 @@ static InterpretResult run(VM* vm) {
                 return runtime_error(vm, "global loading is not yet supported", ERR_SYNTAX);
 			}
 			case OP_CALL: {
-                return runtime_error(vm, "function calling is not yet supported", ERR_SYNTAX);
+                Value func_value = pop(vm);
+                if (!IS_FUNCTION(func_value)) {
+                    return runtime_error(vm, "object is not callable", ERR_NAME);
+                }
+                StackFrame func_frame;
+                func_frame.function = AS_FUNCTION(func_value);
+                func_frame.ip = func_frame.function->body.codes;
+
+                push_frame(vm, func_frame);
+                frame = &vm->callStack[vm->frameCount - 1];
+                break;
 
 			}
             default:

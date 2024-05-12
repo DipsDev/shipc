@@ -31,13 +31,8 @@ static HashNode* get_variable(Parser* parser, char* name, int length) {
     return get_node(parser->varMap, name, length);
 }
 
-static unsigned int add_variable(Parser* parser, char* name, int length) {
-    HashNode* nd_exist = get_node(parser->varMap, name, length);
-    if (nd_exist != NULL) {
-        return nd_exist->value;
-    }
-
-    Local local;
+static unsigned int create_variable(Parser* parser, char* name, int length) {
+    Local  local;
     local.name = name;
     local.value = VAR_NIL;
     local.length = length;
@@ -45,7 +40,16 @@ static unsigned int add_variable(Parser* parser, char* name, int length) {
 
     put_node(parser->varMap, name, length, parser->varCount);
     parser->varCount++;
-    return parser->varCount-1;
+    return parser->varCount - 1;
+
+}
+
+static unsigned int add_variable(Parser* parser, char* name, int length) {
+    HashNode* nd_exist = get_node(parser->varMap, name, length);
+    if (nd_exist != NULL) {
+        return nd_exist->value;
+    }
+    return create_variable(parser, name, length);
 }
 
 
@@ -290,8 +294,8 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; ats");
 
-    // add the variable
-    unsigned int var_index = add_variable(parser, variable_ident.start, variable_ident.length);
+    // add the variable | if we got here we know the variable is not initialized. therefore don't check if it exists.
+    unsigned int var_index = create_variable(parser, variable_ident.start, variable_ident.length);
     write_bytes(current_chunk(parser), OP_STORE_FAST, var_index);
 }
 
@@ -369,9 +373,9 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	}
     write_bytes(current_chunk(parser), OP_NIL, OP_RETURN);
 
+    free_hash_map(parser->varMap);
     parser->varCount = saved_count;
     parser->varMap = saved_map;
-    free_hash_map(parser->varMap);
 	parser->func = before_func;
 	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block in function declaration"); // eat the }
 
