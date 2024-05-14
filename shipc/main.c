@@ -42,10 +42,13 @@ int main() {
 	if (compiled_func == NULL) {
 		exit(1);
 	}
-	// disassemble_func(compiled_func);
+    t = clock() - t;
+    printf("Program took %f seconds to compile\n", (double) t / CLOCKS_PER_SEC);
+	disassemble_func(compiled_func);
 
 	VM vm;
 	init_vm(&vm);
+    t = clock();
 	interpret(&vm, compiled_func);
 
 	free_vm(&vm);
