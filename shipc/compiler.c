@@ -326,10 +326,23 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
     // allow to concat function calls, for ex: pow(2)(3)
     while (parser->current.type == TOKEN_LEFT_PAREN) {
         advance(scanner, parser); // eat the (
-        // TODO: Add option to add arguments
+
+        // parse the call argument
+        uint8_t argument_call = 0;
+        while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_RIGHT_PAREN) {
+            parse_precedence(parser, scanner, PREC_OR); // parse the argument
+            if (parser->current.type != TOKEN_RIGHT_PAREN) {
+                expect(scanner, parser, TOKEN_COMMA, "unexpected token. expected ',' between function arguments");
+            }
+            argument_call++;
+        }
+        if (argument_call >= UINT8_MAX) {
+            custom_error(parser, "too much call arguments");
+        }
+
         expect(scanner, parser, TOKEN_RIGHT_PAREN,
                "unclosed argument list of a function at"); // eat the ) => no arguments for now
-        write_chunk(current_chunk(parser), OP_CALL);
+        write_bytes(current_chunk(parser), OP_CALL, argument_call);
     }
 
 	
@@ -353,20 +366,12 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	advance(scanner, parser); // eat the fn keyword
 	expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier at");
+
+    // create required objects
 	Token func_tkn = parser->previous;
-	expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration at");
-	// TODO: Add calling with arguments
-	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed ) in function declaration in"); // no params currently
-
-
-	
-
-	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected open block in function declaration"); // eat the {
-	
-
-	FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length, FN_FUNCTION);
-	FunctionObj* before_func = parser->func;
-	parser->func = obj;
+    FunctionObj* obj = create_func_obj(func_tkn.start, func_tkn.length, FN_FUNCTION);
+    FunctionObj* before_func = parser->func;
+    parser->func = obj;
 
     // set the variable scope
     HashMap* saved_map = parser->varMap;
@@ -374,6 +379,26 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 
     parser->varMap = (HashMap*) malloc(sizeof (HashMap));
     create_variable_map(parser->varMap);
+
+    expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration at");
+
+    // parse arguments
+    while (parser->current.type != TOKEN_RIGHT_PAREN && parser->current.type != TOKEN_EOF) {
+        if (parser->current.type != TOKEN_IDENTIFIER){
+            custom_error(parser, "Unexpected token at '%.*s'", parser->current.length, parser->current.start);
+        }
+        add_variable(parser, parser->current.start, parser->current.length);
+        advance(scanner, parser);
+
+        if (parser->current.type == TOKEN_EOF || parser->current.type == TOKEN_RIGHT_PAREN) {
+            continue;
+        }
+        expect(scanner, parser, TOKEN_COMMA, "expected ',' between function arguments");
+    }
+
+	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed ) in function declaration in"); // no params currently
+	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected open block in function declaration"); // eat the {
+	
 
 
 	while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_RIGHT_BRACE) {

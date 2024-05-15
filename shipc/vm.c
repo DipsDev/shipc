@@ -40,6 +40,14 @@ static Value pop(VM* vm) {
 	return *vm->sp;
 }
 
+static Value peek_behind(VM* vm, int behind) {
+    if (vm->stack >  vm->sp - behind) {
+        printf("Empty stack");
+        exit(1);
+    }
+    return *(vm->sp - behind);
+}
+
 static InterpretResult runtime_error(VM* vm, const char* message, ErrorType type, ...) {
     // creates an informative error message, and returns it
     char temp[256] = {0};
@@ -296,7 +304,8 @@ static InterpretResult run(VM* vm) {
                     break;
 			}
 			case OP_CALL: {
-                Value func_value = pop(vm);
+                uint8_t arg_count = READ_BYTE();
+                Value func_value = peek_behind(vm, arg_count + 1);
                 if (!IS_FUNCTION(func_value)) {
                     return runtime_error(vm, "object is not callable", ERR_NAME);
                 }
@@ -305,6 +314,11 @@ static InterpretResult run(VM* vm) {
                 func_frame.ip = func_frame.function->body.codes;
 
                 push_frame(vm, func_frame);
+
+                for (uint8_t i = arg_count; i >0; i--) {
+                    Value curr_arg = pop(vm);
+                    func_frame.function->locals[i - 1].value = curr_arg;
+                }
                 frame = &vm->callStack[vm->frameCount - 1];
                 break;
 
