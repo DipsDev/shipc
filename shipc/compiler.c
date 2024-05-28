@@ -244,11 +244,11 @@ static void parse_literal(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_debug_statement(Parser* parser, Scanner* scanner) {
-	advance(scanner, parser); // eat the print keyword
 	advance(scanner, parser); // eat the (
+    write_chunk(current_chunk(parser), OP_NIL); // push nil as the function doesn't return anything
+
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "expected ) after func call at");
-	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; after call");
     write_chunk(current_chunk(parser), OP_SHOW_TOP);
 }
 
@@ -287,7 +287,6 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 static void parse_variable(Parser* parser, Scanner* scanner) {
 	// parses a variable statement:
 	// var x = 5;
-	advance(scanner, parser); // eat the var keyword
 	Token variable_ident = parser->current;
 
     // check if variable is already defined in the current scope
@@ -301,7 +300,6 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
-	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; ats");
 
     // add the variable | if we got here we know the variable is not initialized. therefore don't check if it exists.
     unsigned int var_index = create_variable(parser, variable_ident.start, variable_ident.length);
@@ -310,20 +308,20 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 
 
 static void parse_identifier(Parser* parser, Scanner* scanner) {
-	// add the ident string to the pool so we can either call or load it
-    HashNode* var = get_variable(parser, parser->previous.start, parser->previous.length);
+    // add the ident string to the pool so we can either call or load it
+    HashNode *var = get_variable(parser, parser->previous.start, parser->previous.length);
     if (var == NULL) {
         StringObj *obj = create_string_obj(parser->previous.start, parser->previous.length);
         uint8_t string_index = add_constant(current_chunk(parser), VAR_OBJ(obj));
         write_bytes(current_chunk(parser), OP_LOAD_GLOBAL, string_index);
-    } else {
-        write_bytes(current_chunk(parser), OP_LOAD_LOCAL, var->value);
-    }
-
-    if (parser->current.type != TOKEN_LEFT_PAREN) {
         return;
     }
+    write_bytes(current_chunk(parser), OP_LOAD_LOCAL, var->value);
+}
+
+static void parse_call(Parser* parser, Scanner* scanner) {
     // allow to concat function calls, for ex: pow(2)(3)
+    printf("%u | %u", parser->current.type, parser->previous.type);
     while (parser->current.type == TOKEN_LEFT_PAREN) {
         advance(scanner, parser); // eat the (
 
@@ -506,16 +504,7 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
 
 static void parse_statement(Parser* parser, Scanner* scanner) {
 	// parse statements that do not return anything
-	// for ex: call(a,b,c);;
-	switch (parser->current.type) {
-	case TOKEN_IF: return parse_if_statement(parser, scanner);
-	case TOKEN_PRINT: return parse_debug_statement(parser, scanner);
-	case TOKEN_VAR: return parse_variable(parser, scanner);
-	case TOKEN_FN: return parse_func_statement(parser, scanner);
-    case TOKEN_RETURN: return parse_return_statement(parser, scanner);
-    case TOKEN_GLOBAL: return parse_global_statement(parser, scanner);
-    case TOKEN_WHILE: return parse_while_statement(parser, scanner);
-	}
+	// for ex: call(a,b,c);
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
 	write_chunk(current_chunk(parser), OP_POP_TOP);
@@ -541,7 +530,7 @@ static void end_compile(Parser* parser, Scanner* scanner) {
 }
 
 ParseRule rules[] = {
-  [TOKEN_LEFT_PAREN] = {parse_grouping, NULL,   PREC_NONE},
+  [TOKEN_LEFT_PAREN] = {parse_grouping, parse_call,   PREC_NONE},
   [TOKEN_RIGHT_PAREN] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LEFT_BRACE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_RIGHT_BRACE] = {NULL,     NULL,   PREC_NONE},
@@ -565,15 +554,16 @@ ParseRule rules[] = {
   [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_NONE},
+  [TOKEN_FN] = {parse_func_statement, NULL, PREC_NONE},
   [TOKEN_FOR] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IF] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_NIL] = {parse_literal,     NULL,   PREC_NONE},
-  [TOKEN_PRINT] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_PRINT] = {parse_debug_statement,     NULL,   PREC_NONE},
   [TOKEN_RETURN] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_SUPER] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_THIS] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_TRUE] = {parse_literal,     NULL,   PREC_NONE},
-  [TOKEN_VAR] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_VAR] = {parse_variable,     NULL,   PREC_NONE},
   [TOKEN_WHILE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF] = {NULL,     NULL,   PREC_NONE},
