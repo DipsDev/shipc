@@ -43,7 +43,7 @@ int main() {
 		exit(1);
 	}
     t = clock() - t;
-    printf("Program took %f seconds to compile\n", (double) t / CLOCKS_PER_SEC);
+    printf("\nProgram took %f seconds to compile\n", (double) t / CLOCKS_PER_SEC);
 	disassemble_func(compiled_func);
 
 	VM vm;
@@ -55,7 +55,7 @@ int main() {
 
     t = clock() - t;
     double time_taken = ((double) t / CLOCKS_PER_SEC);
-    printf("Program took %f seconds to execute\n", time_taken);
+    printf("\nProgram took %f seconds to execute\n", time_taken);
 
 
 
