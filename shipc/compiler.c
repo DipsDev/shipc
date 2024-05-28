@@ -240,6 +240,7 @@ static void parse_literal(Parser* parser, Scanner* scanner) {
 	case TOKEN_FALSE: write_chunk(current_chunk(parser), OP_FALSE); break;
 	case TOKEN_TRUE: write_chunk(current_chunk(parser), OP_TRUE); break;
 	case TOKEN_NIL: write_chunk(current_chunk(parser), OP_NIL); break;
+    default: return; // unreachable
 	}
 }
 
@@ -287,6 +288,7 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 static void parse_variable(Parser* parser, Scanner* scanner) {
 	// parses a variable statement:
 	// var x = 5;
+    write_chunk(current_chunk(parser), OP_NIL);
 	Token variable_ident = parser->current;
 
     // check if variable is already defined in the current scope
@@ -298,6 +300,8 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 
 	advance(scanner, parser);
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
+
+    printf("%u", parser->current.type);
 
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 

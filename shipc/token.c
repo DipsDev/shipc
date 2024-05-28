@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "token.h"
 
@@ -107,7 +108,7 @@ static TokenType identifier_type(Scanner* scanner) {
 		case 'f': {
 			if (scanner->current - scanner->start >= 1) {
 				switch (scanner->start[1]) {
-				case 'a': return reserved_keywords(scanner, 3, "lse", TOKEN_FALSE);
+				case 'a': return reserved_keywords(scanner, 4, "alse", TOKEN_FALSE);
 				case 'n': return TOKEN_FN;
 				default: return TOKEN_IDENTIFIER;
 				}
