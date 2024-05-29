@@ -10,11 +10,11 @@ The language is 100% custom-made, with its own VM and bytecode version.
 
 
 ### Roadmap
-- While loops (Partly Done)
+- While loops (Done)
 - Global and local variables (Done)
 - Math expressions (Done)
 - Functions (Done)
-- Function arguments
+- Function arguments (Done)
 - Garbage collector
 
 
