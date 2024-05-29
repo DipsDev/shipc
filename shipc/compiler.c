@@ -257,7 +257,6 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	// parse the bool expr
 	parse_expression(parser, scanner);
 
-    write_chunk(current_chunk(parser), OP_NIL);
 
 	// add a temp value
 	write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE);
