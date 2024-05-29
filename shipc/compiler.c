@@ -104,7 +104,7 @@ static void error(Parser* parser, Scanner* scanner, const char* message) {
     if (*temp == ';') {
         line_length++;
     }
-	fprintf(stderr, "error: %s\n  / main.ship:%i:%i\n  |\n%i | %.*s\n  \\%*s^^^^ \n",
+	fprintf(stderr, "error: %s\n  [main.ship:%i:%i]\n  |\n%i | %.*s\n  |%*s^^^^ \n",
             message, parser->current.line, parser->current.lineOffset, parser->current.line, line_length, parser->current.start - parser->current.lineOffset, parser->current.lineOffset, " ");
 	parser->hadError = true;
     synchronize(parser, scanner);
@@ -284,7 +284,7 @@ static void parse_debug_statement(Parser* parser, Scanner* scanner) {
     write_chunk(current_chunk(parser), OP_NIL); // push nil as the function doesn't return anything
 
 	parse_expression(parser, scanner);
-	expect(scanner, parser, TOKEN_RIGHT_PAREN, "expected ) after func call");
+	expect(scanner, parser, TOKEN_RIGHT_PAREN, "Missing parentheses in call");
     write_chunk(current_chunk(parser), OP_SHOW_TOP);
 }
 
@@ -300,13 +300,13 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	int offset = current_chunk(parser)->count;
 	write_bytes(current_chunk(parser), 0xff, 0xff);
 
-	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected { after if expression"); // expect open block after boolean expression
+	expect(scanner, parser, TOKEN_LEFT_BRACE, "Expected { after if expression"); // expect open block after boolean expression
 	while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
 		// parse the body of the if statement
 		parse_statement(parser, scanner);
 	}
 	// expect user closing the if body
-	expect(scanner, parser, TOKEN_RIGHT_BRACE, "expected } after open block");
+	expect(scanner, parser, TOKEN_RIGHT_BRACE, "Expected } after open block");
 
 	// calculate the new size of the body, and modify the jmp size
 	int after_body = current_chunk(parser)->count;
@@ -333,10 +333,10 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 
 
 	advance(scanner, parser);
-	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration");
+	expect(scanner, parser, TOKEN_EQUAL, "Expected '=' after variable declaration");
 
     if (get_rule(parser->current.type)->precedence == PREC_NONE) {
-        error(parser, scanner, "unexpected token");
+        error(parser, scanner, "Unexpected token");
         return;
     }
 
@@ -369,16 +369,16 @@ static void parse_call(Parser* parser, Scanner* scanner) {
     while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_RIGHT_PAREN) {
         parse_precedence(parser, scanner, PREC_OR); // parse the argument
         if (parser->current.type != TOKEN_RIGHT_PAREN) {
-            expect(scanner, parser, TOKEN_COMMA, "unexpected token. expected ',' between function arguments");
+            expect(scanner, parser, TOKEN_COMMA, "Unexpected token. expected ',' between function arguments");
         }
         argument_call++;
     }
     if (argument_call >= UINT8_MAX) {
-        custom_error(parser, "too much call arguments");
+        custom_error(parser, "Too much call arguments");
     }
 
     expect(scanner, parser, TOKEN_RIGHT_PAREN,
-           "unclosed argument list of a function"); // eat the  => no arguments for now
+           "Unclosed argument list of a function"); // eat the  => no arguments for now
            write_bytes(current_chunk(parser), OP_CALL, argument_call);
 
 	
@@ -386,7 +386,7 @@ static void parse_call(Parser* parser, Scanner* scanner) {
 
 static void parse_return_statement(Parser* parser, Scanner* scanner) {
     if (parser->func->type == FN_SCRIPT) {
-        error(parser, scanner,  "invalid syntax");
+        error(parser, scanner,  "Invalid syntax");
     }
     if (parser->current.type == TOKEN_SEMICOLON) { // if no expression was after the return, return nil;
         write_chunk(current_chunk(parser), OP_NIL);
@@ -398,7 +398,7 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
-	expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier");
+	expect(scanner, parser, TOKEN_IDENTIFIER, "Expected identifier");
 
     // create required objects
 	Token func_tkn = parser->previous;
@@ -413,7 +413,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
     parser->varMap = (HashMap*) malloc(sizeof (HashMap));
     create_variable_map(parser->varMap);
 
-    expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration");
+    expect(scanner, parser, TOKEN_LEFT_PAREN, "Expected ( in function declaration");
 
     // parse arguments
     while (parser->current.type != TOKEN_RIGHT_PAREN && parser->current.type != TOKEN_EOF) {
@@ -426,11 +426,11 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
         if (parser->current.type == TOKEN_EOF || parser->current.type == TOKEN_RIGHT_PAREN) {
             continue;
         }
-        expect(scanner, parser, TOKEN_COMMA, "expected ',' between function arguments");
+        expect(scanner, parser, TOKEN_COMMA, "Expected ',' between function arguments");
     }
 
-	expect(scanner, parser, TOKEN_RIGHT_PAREN, "unclosed ) in function declaration in"); // no params currently
-	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected open block in function declaration"); // eat the {
+	expect(scanner, parser, TOKEN_RIGHT_PAREN, "Unclosed ) in function declaration in"); // no params currently
+	expect(scanner, parser, TOKEN_LEFT_BRACE, "Expected open block in function declaration"); // eat the {
 	
 
 
@@ -445,7 +445,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
     parser->varCount = saved_count;
     parser->varMap = saved_map;
 	parser->func = before_func;
-	expect(scanner, parser, TOKEN_RIGHT_BRACE, "unclosed block in function declaration"); // eat the }
+	expect(scanner, parser, TOKEN_RIGHT_BRACE, "Unclosed block in function declaration"); // eat the }
 
 	// Add function constant
 	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
@@ -471,7 +471,7 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
         custom_error(parser, "variable '%.*s' is not defined in the current scope. did you mean 'glob %.*s = ...'", variable_ident.length, variable_ident.start, variable_ident.length, variable_ident.start);
         exit(1);
     }
-	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
+	expect(scanner, parser, TOKEN_EQUAL, "Expected '=' after variable declaration at");
 
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 
@@ -484,10 +484,10 @@ static void parse_global_statement(Parser* parser, Scanner* scanner) {
     advance(scanner, parser); // eat the glob keyword
     Token variable_ident = parser->current;
     advance(scanner, parser);
-    expect(scanner, parser, TOKEN_EQUAL, "expected '=' after global assignment at");
+    expect(scanner, parser, TOKEN_EQUAL, "Expected '=' after global assignment");
 
     parse_precedence(parser, scanner, PREC_OR);
-    expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
+    expect(scanner, parser, TOKEN_SEMICOLON, "Expected ;");
 
     StringObj* obj =create_string_obj(variable_ident.start, variable_ident.length);
     uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
@@ -509,19 +509,19 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
     int offset = current_chunk(parser)->count;
     write_bytes(current_chunk(parser), 0xff, 0xff);
 
-    expect(scanner, parser, TOKEN_LEFT_BRACE, "expected { after if expression at"); // expect open block after boolean expression
+    expect(scanner, parser, TOKEN_LEFT_BRACE, "Expected { after if expression"); // expect open block after boolean expression
     while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
         // parse the body of the if statement
         parse_statement(parser, scanner);
     }
     // expect user closing the if body
-    expect(scanner, parser, TOKEN_RIGHT_BRACE, "expected } after open block at");
+    expect(scanner, parser, TOKEN_RIGHT_BRACE, "Expected } after open block");
 
     // calculate the new size of the body, and modify the jmp size
     int after_body = current_chunk(parser)->count;
     int body_size = after_body - offset - 1; // subtract 2 because the if and the value
     if (body_size > UINT16_MAX) {
-        error(parser, scanner, "max jump length exceeded");
+        error(parser, scanner, "Max jump length exceeded");
     }
 
     // set the new size
@@ -539,7 +539,7 @@ static void parse_expression_statement(Parser* parser, Scanner* scanner) {
 	// parse statements that do not return anything
 	// for ex: call(a,b,c);
 	parse_expression(parser, scanner);
-	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
+	expect(scanner, parser, TOKEN_SEMICOLON, "Expected ;");
 	write_chunk(current_chunk(parser), OP_POP_TOP);
 }
 
@@ -548,7 +548,7 @@ static void parse_control_statement(Parser* parser, Scanner* scanner) {
 }
 static void parse_declaration_statement(Parser* parser, Scanner* scanner) {
     parse_expression(parser, scanner);
-    expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at ");
+    expect(scanner, parser, TOKEN_SEMICOLON, "Expected ;");
 }
 
 static void parse_statement(Parser* parser, Scanner* scanner) {
@@ -582,7 +582,7 @@ static void end_compile(Parser* parser, Scanner* scanner) {
 
 		return;
 	}
-	error(parser, scanner, "expected EOF at end of file");
+	error(parser, scanner, "Expected EOF at end of file");
 }
 
 ParseRule rules[] = {
