@@ -72,7 +72,7 @@ void init_vm(VM* vm) {
 void free_vm(VM* vm) {
 }
 
-void interpret(VM* vm, FunctionObj* main_script) {
+InterpretResult interpret(VM* vm, FunctionObj* main_script) {
     // push the main script to the call stack
     StackFrame main_frame;
     main_frame.ip = main_script->body.codes;
@@ -84,8 +84,9 @@ void interpret(VM* vm, FunctionObj* main_script) {
         Value error_value = pop(vm);
         ErrorObj* err_obj = (ErrorObj*) AS_OBJ(error_value);
         fprintf(stderr, "[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
-        return;
+        return RESULT_ERROR;
     }
+    return RESULT_SUCCESS;
 }
 
 static InterpretResult run(VM* vm) {
