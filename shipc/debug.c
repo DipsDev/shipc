@@ -11,6 +11,11 @@ static int simple_instruction(const char* string, int offset) {
 	return 1;
 }
 
+static int byte_instruction(Chunk* chunk, const char* string, int offset) {
+    printf("| %04d %s (%u) |\n", offset, string, chunk->codes[offset + 1]);
+    return 2;
+}
+
 static void print_obj(Chunk* chunk, Value val, int offset, char* message) {
 	uint8_t i = chunk->codes[offset + 1];
 	switch (AS_OBJ(val)->type) {
@@ -74,7 +79,7 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_DIV: return simple_instruction("OP_DIV", offset);
 		case OP_MUL: return simple_instruction("OP_MUL", offset);
 		case OP_FALSE: return simple_instruction("OP_FALSE", offset);
-		case OP_CALL: return simple_instruction("OP_CALL", offset);
+		case OP_CALL: return byte_instruction(&func->body, "OP_CALL", offset);
 		case OP_NOT: return simple_instruction("OP_NOT", offset);
         case OP_ASSIGN_LOCAL: return variable_instruction(func, "OP_ASSIGN_LOCAL", offset);
         case OP_ASSIGN_GLOBAL: return global_variable_instruction(func, "OP_ASSIGN_GLOBAL", offset);
@@ -89,7 +94,10 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
         case OP_RETURN: return simple_instruction("OP_RETURN", offset);
 		case OP_CONSTANT: return constant_instruction(&func->body, offset);
-        default: return 1; // should be unreachable
+        default: {
+            printf("Uncaught opcode %u", code);
+            return 1;
+        }
 
 
 	}

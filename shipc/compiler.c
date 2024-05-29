@@ -347,7 +347,6 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
     if (parser->func->type == FN_SCRIPT) {
         error(parser, "invalid syntax at");
     }
-    advance(scanner, parser); // eat the return keyword
     if (parser->current.type == TOKEN_SEMICOLON) { // if no expression was after the return, return nil;
         write_chunk(current_chunk(parser), OP_NIL);
 
@@ -355,7 +354,6 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
         parse_precedence(parser, scanner, PREC_OR); // parse the value
     }
     write_chunk(current_chunk(parser), OP_RETURN);
-    expect(scanner, parser, TOKEN_SEMICOLON, "expected ; after statement got");
 }
 
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
@@ -522,6 +520,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
         case TOKEN_WHILE:
             return parse_control_statement(parser, scanner);
         case TOKEN_VAR:
+        case TOKEN_RETURN:
             return parse_declaration_statement(parser, scanner);
         default:
             return parse_expression_statement(parser, scanner);
@@ -577,7 +576,7 @@ ParseRule rules[] = {
   [TOKEN_IF] = {parse_if_statement,     NULL,   PREC_NONE},
   [TOKEN_NIL] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_PRINT] = {parse_debug_statement,     NULL,   PREC_NONE},
-  [TOKEN_RETURN] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_RETURN] = {parse_return_statement,     NULL,   PREC_NONE},
   [TOKEN_SUPER] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_THIS] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_TRUE] = {parse_literal,     NULL,   PREC_NONE},
