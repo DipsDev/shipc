@@ -254,9 +254,10 @@ static void parse_debug_statement(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_if_statement(Parser* parser, Scanner* scanner) {
-	advance(scanner, parser); // eat the if keyword
 	// parse the bool expr
-	parse_expression(parser, scanner); 
+	parse_expression(parser, scanner);
+
+    write_chunk(current_chunk(parser), OP_NIL);
 
 	// add a temp value
 	write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE);
@@ -288,7 +289,6 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 static void parse_variable(Parser* parser, Scanner* scanner) {
 	// parses a variable statement:
 	// var x = 5;
-    write_chunk(current_chunk(parser), OP_NIL);
 	Token variable_ident = parser->current;
 
     // check if variable is already defined in the current scope
@@ -301,7 +301,6 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 	advance(scanner, parser);
 	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
 
-    printf("%u", parser->current.type);
 
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 
@@ -506,12 +505,33 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
 
 }
 
-static void parse_statement(Parser* parser, Scanner* scanner) {
+static void parse_expression_statement(Parser* parser, Scanner* scanner) {
 	// parse statements that do not return anything
 	// for ex: call(a,b,c);
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at");
 	write_chunk(current_chunk(parser), OP_POP_TOP);
+}
+
+static void parse_control_statement(Parser* parser, Scanner* scanner) {
+    parse_expression(parser, scanner);
+}
+static void parse_declaration_statement(Parser* parser, Scanner* scanner) {
+    parse_expression(parser, scanner);
+    expect(scanner, parser, TOKEN_SEMICOLON, "expected ; at ");
+}
+
+static void parse_statement(Parser* parser, Scanner* scanner) {
+    switch (parser->current.type) {
+        case TOKEN_FOR:
+        case TOKEN_IF:
+        case TOKEN_WHILE:
+            return parse_control_statement(parser, scanner);
+        case TOKEN_VAR:
+            return parse_declaration_statement(parser, scanner);
+        default:
+            return parse_expression_statement(parser, scanner);
+    }
 }
 
 
@@ -560,7 +580,7 @@ ParseRule rules[] = {
   [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_FN] = {parse_func_statement, NULL, PREC_NONE},
   [TOKEN_FOR] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_IF] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_IF] = {parse_if_statement,     NULL,   PREC_NONE},
   [TOKEN_NIL] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_PRINT] = {parse_debug_statement,     NULL,   PREC_NONE},
   [TOKEN_RETURN] = {NULL,     NULL,   PREC_NONE},
