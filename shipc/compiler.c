@@ -80,8 +80,8 @@ typedef struct {
 static ParseRule* get_rule(uint8_t token);
 static void parse_statement(Parser* parser, Scanner* scanner);
 static void parse_expression(Parser* parser, Scanner* scanner);
-
-
+static void advance(Scanner* scanner, Parser* parser) ;
+static void synchronize(Parser* parser, Scanner* scanner) ;
 
 
 
@@ -93,9 +93,21 @@ static void parse_expression(Parser* parser, Scanner* scanner);
 
 
 // error related functions
-static void error(Parser* parser, const char* string) {
-	fprintf(stderr, "[ERROR] %s '%.*s'\n", string, parser->current.length, parser->current.start);
+static void error(Parser* parser, Scanner* scanner, const char* message) {
+    // find the first letter of the line
+    int line_length = parser->current.lineOffset;
+    char* temp = parser->current.start;
+    while (*temp != ';' && *temp != '\n') {
+        line_length++;
+        temp++;
+    }
+    if (*temp == ';') {
+        line_length++;
+    }
+	fprintf(stderr, "error: %s\n  / main.ship:%i:%i\n  |\n%i | %.*s\n  \\%*s^^^^ \n",
+            message, parser->current.line, parser->current.lineOffset, parser->current.line, line_length, parser->current.start - parser->current.lineOffset, parser->current.lineOffset, " ");
 	parser->hadError = true;
+    synchronize(parser, scanner);
 }
 
 static void custom_error(Parser* parser, const char* string, ...) {
@@ -106,9 +118,10 @@ static void custom_error(Parser* parser, const char* string, ...) {
     parser->hadError = true;
 }
 
-static void error_at_current(Parser* parser) {
-	error(parser, "encountered an error");
-	parser->hadError = true;
+static void synchronize(Parser* parser, Scanner* scanner) {
+    while (parser->previous.type != TOKEN_EOF && parser->previous.type != TOKEN_SEMICOLON) {
+        advance(scanner, parser);
+    }
 }
 
 ////
@@ -133,8 +146,8 @@ static void advance(Scanner* scanner, Parser* parser) {
 	for (;;) {
 		parser->current = tokenize(scanner);
 		if (parser->current.type != TOKEN_ERROR) return;
+        custom_error(parser,  "parsing error");
 
-		error_at_current(parser);
 	}
 }
 
@@ -143,7 +156,10 @@ static void expect(Scanner* scanner, Parser* parser, TokenType type, const char 
 		advance(scanner, parser);
 		return;
 	}
-	error(parser, message);
+    if (parser->current.type == TOKEN_EOF) {
+        return;
+    }
+	error(parser, scanner, message);
 }
 
 
@@ -152,7 +168,7 @@ static void parse_precedence(Parser* parser, Scanner* scanner, Precedence precen
 	advance(scanner, parser);
 	ParseFn rule = get_rule(parser->previous.type)->prefix;
 	if (rule == NULL) {
-		error(parser, "expected expression at");
+		error(parser, scanner, "expected expression");
 		return;
 	}
 	rule(parser, scanner);
@@ -176,7 +192,7 @@ static void parse_grouping(Parser* parser, Scanner* scanner) {
 		advance(scanner, parser);
 		return;
 	}
-	error(parser, "unclosed '(' block at");
+	error(parser, scanner, "unclosed '(' block");
 }
 
 static void parse_boolean(Parser* parser, Scanner* scanner) {
@@ -249,7 +265,7 @@ static void parse_debug_statement(Parser* parser, Scanner* scanner) {
     write_chunk(current_chunk(parser), OP_NIL); // push nil as the function doesn't return anything
 
 	parse_expression(parser, scanner);
-	expect(scanner, parser, TOKEN_RIGHT_PAREN, "expected ) after func call at");
+	expect(scanner, parser, TOKEN_RIGHT_PAREN, "expected ) after func call");
     write_chunk(current_chunk(parser), OP_SHOW_TOP);
 }
 
@@ -265,19 +281,19 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	int offset = current_chunk(parser)->count;
 	write_bytes(current_chunk(parser), 0xff, 0xff);
 
-	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected { after if expression at"); // expect open block after boolean expression
+	expect(scanner, parser, TOKEN_LEFT_BRACE, "expected { after if expression"); // expect open block after boolean expression
 	while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
 		// parse the body of the if statement
 		parse_statement(parser, scanner);
 	}
 	// expect user closing the if body
-	expect(scanner, parser, TOKEN_RIGHT_BRACE, "expected } after open block at");
+	expect(scanner, parser, TOKEN_RIGHT_BRACE, "expected } after open block");
 
 	// calculate the new size of the body, and modify the jmp size
 	int after_body = current_chunk(parser)->count;
 	int body_size = after_body - offset - 2; // subtract 2 because the if and the value
 	if (body_size > UINT16_MAX) {
-		error(parser, "max jump length exceeded");
+		error(parser, scanner, "max jump length exceeded");
 	}
 
 	// set the new size
@@ -292,16 +308,22 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 
     // check if variable is already defined in the current scope
     if(get_variable(parser, variable_ident.start, variable_ident.length) != NULL) {
-        error(parser, "redeclaration of variable at");
+        error(parser, scanner, "redeclaration of variable");
         exit(1);
     }
 
 
 	advance(scanner, parser);
-	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration at");
+	expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration");
+
+    if (get_rule(parser->current.type)->precedence == PREC_NONE) {
+        error(parser, scanner, "unexpected token");
+        return;
+    }
 
 
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
+
 
     // add the variable | if we got here we know the variable is not initialized. therefore don't check if it exists.
     unsigned int var_index = create_variable(parser, variable_ident.start, variable_ident.length);
@@ -337,7 +359,7 @@ static void parse_call(Parser* parser, Scanner* scanner) {
     }
 
     expect(scanner, parser, TOKEN_RIGHT_PAREN,
-           "unclosed argument list of a function at"); // eat the  => no arguments for now
+           "unclosed argument list of a function"); // eat the  => no arguments for now
            write_bytes(current_chunk(parser), OP_CALL, argument_call);
 
 	
@@ -345,7 +367,7 @@ static void parse_call(Parser* parser, Scanner* scanner) {
 
 static void parse_return_statement(Parser* parser, Scanner* scanner) {
     if (parser->func->type == FN_SCRIPT) {
-        error(parser, "invalid syntax at");
+        error(parser, scanner,  "invalid syntax");
     }
     if (parser->current.type == TOKEN_SEMICOLON) { // if no expression was after the return, return nil;
         write_chunk(current_chunk(parser), OP_NIL);
@@ -357,7 +379,7 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
-	expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier at");
+	expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier");
 
     // create required objects
 	Token func_tkn = parser->previous;
@@ -372,12 +394,12 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
     parser->varMap = (HashMap*) malloc(sizeof (HashMap));
     create_variable_map(parser->varMap);
 
-    expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration at");
+    expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration");
 
     // parse arguments
     while (parser->current.type != TOKEN_RIGHT_PAREN && parser->current.type != TOKEN_EOF) {
         if (parser->current.type != TOKEN_IDENTIFIER){
-            custom_error(parser, "Unexpected token at '%.*s'", parser->current.length, parser->current.start);
+            error(parser, scanner, "Unexpected token");
         }
         add_variable(parser, parser->current.start, parser->current.length);
         advance(scanner, parser);
@@ -480,7 +502,7 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
     int after_body = current_chunk(parser)->count;
     int body_size = after_body - offset - 1; // subtract 2 because the if and the value
     if (body_size > UINT16_MAX) {
-        error(parser, "max jump length exceeded");
+        error(parser, scanner, "max jump length exceeded");
     }
 
     // set the new size
@@ -541,7 +563,7 @@ static void end_compile(Parser* parser, Scanner* scanner) {
 
 		return;
 	}
-	error(parser, "expected EOF at end of file got");
+	error(parser, scanner, "expected EOF at end of file");
 }
 
 ParseRule rules[] = {
@@ -564,20 +586,20 @@ ParseRule rules[] = {
   [TOKEN_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_IDENTIFIER] = {parse_var_assignment,     NULL,   PREC_NONE},
-  [TOKEN_STRING] = {parse_string,     NULL,   PREC_NONE},
-  [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
+  [TOKEN_IDENTIFIER] = {parse_var_assignment,     NULL,   PREC_PRIMARY},
+  [TOKEN_STRING] = {parse_string,     NULL,   PREC_PRIMARY},
+  [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_PRIMARY},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_NONE},
+  [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_PRIMARY},
   [TOKEN_FN] = {parse_func_statement, NULL, PREC_NONE},
   [TOKEN_FOR] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IF] = {parse_if_statement,     NULL,   PREC_NONE},
-  [TOKEN_NIL] = {parse_literal,     NULL,   PREC_NONE},
+  [TOKEN_NIL] = {parse_literal,     NULL,   PREC_PRIMARY},
   [TOKEN_PRINT] = {parse_debug_statement,     NULL,   PREC_NONE},
   [TOKEN_RETURN] = {parse_return_statement,     NULL,   PREC_NONE},
   [TOKEN_SUPER] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_THIS] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_TRUE] = {parse_literal,     NULL,   PREC_NONE},
+  [TOKEN_TRUE] = {parse_literal,     NULL,   PREC_PRIMARY},
   [TOKEN_VAR] = {parse_variable,     NULL,   PREC_NONE},
   [TOKEN_WHILE] = {parse_while_statement,     NULL,   PREC_NONE},
   [TOKEN_ERROR] = {NULL,     NULL,   PREC_NONE},

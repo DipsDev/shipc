@@ -29,12 +29,14 @@ typedef struct {
 	char* start;
 	int length;
 	int line;
+    int lineOffset;
 } Token;
 
 typedef struct {
 	char* start;
 	char* current;
 	int line;
+    int lineOffset;
 } Scanner;
 
 Token tokenize(Scanner *scanner);

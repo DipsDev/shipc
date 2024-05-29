@@ -37,6 +37,8 @@ static Token create_token(Scanner *scanner, TokenType type) {
 	tkn.start = scanner->start;
 	tkn.type = type;
 	tkn.line = scanner->line;
+    tkn.lineOffset = scanner->lineOffset;
+    scanner->lineOffset += tkn.length;
 	return tkn;
 }
 
@@ -53,7 +55,8 @@ Scanner create_token_scanner(const char* source) {
 	Scanner scan;
 	scan.current = source;
 	scan.start = source;
-	scan.line = 0;
+	scan.line = 1;
+    scan.lineOffset = 0;
 	return scan;
 }
 
@@ -137,10 +140,23 @@ static void remove_whitespaces(Scanner *scanner) {
 	for (;;) {
 		char c = peek(scanner);
 		switch (c) {
-			case ' ':
-			case '\t':
-			case '\n':
-			case '\r': advance(scanner); break;
+			case ' ': {
+                scanner->lineOffset++;
+                advance(scanner);
+                break;
+            }
+			case '\t': {
+                scanner->lineOffset += 4;
+                advance(scanner);
+                break;
+            }
+			case '\r':
+            case '\n': {
+                scanner->line++;
+                scanner->lineOffset = 0;
+                advance(scanner);
+                break;
+            }
 			default: {
 				return;
 			}
