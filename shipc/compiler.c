@@ -202,8 +202,30 @@ static void parse_boolean(Parser* parser, Scanner* scanner) {
 		write_chunk(current_chunk(parser), OP_NOT);
 		break;
 	}
+    case TOKEN_LESS_EQUAL: {
+        write_chunk(current_chunk(parser), OP_GREATER_THAN);
+        write_chunk(current_chunk(parser), OP_NOT);
+        break;
+    }
+    case TOKEN_GREATER_EQUAL: {
+        write_chunk(current_chunk(parser), OP_LESS_THAN);
+        write_chunk(current_chunk(parser), OP_NOT);
+        break;
+    }
+    case TOKEN_GREATER: {
+        write_chunk(current_chunk(parser), OP_GREATER_THAN);
+        break;
+    }
+    case TOKEN_LESS: {
+        write_chunk(current_chunk(parser), OP_LESS_THAN);
+        break;
+    }
+        default:
+            error(parser, scanner, "Unexpected Binary Token"); // unreachable
+
 	}
 }
+
 
 
 
@@ -579,10 +601,10 @@ ParseRule rules[] = {
   [TOKEN_BANG_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
   [TOKEN_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EQUAL_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
-  [TOKEN_GREATER] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_LESS] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_GREATER] = {NULL,     parse_boolean,   PREC_EQUALITY},
+  [TOKEN_GREATER_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
+  [TOKEN_LESS] = {NULL,     parse_boolean,   PREC_EQUALITY},
+  [TOKEN_LESS_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
   [TOKEN_IDENTIFIER] = {parse_var_assignment,     NULL,   PREC_PRIMARY},
   [TOKEN_STRING] = {parse_string,     NULL,   PREC_PRIMARY},
   [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_PRIMARY},

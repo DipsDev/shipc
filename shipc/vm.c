@@ -146,6 +146,26 @@ static InterpretResult run(VM* vm) {
 				push(vm, VAR_NUMBER(mul));
 				break;
 			}
+            case OP_LESS_THAN: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (IS_NUMBER(a) && IS_NUMBER(b)) {
+                    bool test = AS_NUMBER(a) < AS_NUMBER(b);
+                    push(vm, VAR_BOOL(test));
+                    break;
+                }
+                return runtime_error(vm, "non supported operands for GREATER_THAN", ERR_TYPE);
+            }
+            case OP_GREATER_THAN: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (IS_NUMBER(a) && IS_NUMBER(b)) {
+                    bool test = AS_NUMBER(a) > AS_NUMBER(b);
+                    push(vm, VAR_BOOL(test));
+                    break;
+                }
+                return runtime_error(vm, "non supported operands for GREATER_THAN", ERR_TYPE);
+            }
 			case OP_ADD: {
 				Value b = pop(vm);
 				Value a = pop(vm);

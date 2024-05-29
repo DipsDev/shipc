@@ -25,6 +25,8 @@ typedef enum { // available op codes
     OP_RETURN,
 	OP_SHOW_TOP,
 	OP_COMPARE,
+    OP_GREATER_THAN,
+    OP_LESS_THAN,
 	OP_NEGATE,
 	OP_POP_JUMP_IF_FALSE,
 	OP_NOT,
