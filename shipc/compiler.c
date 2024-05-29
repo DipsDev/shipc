@@ -156,9 +156,6 @@ static void expect(Scanner* scanner, Parser* parser, TokenType type, const char 
 		advance(scanner, parser);
 		return;
 	}
-    if (parser->current.type == TOKEN_EOF) {
-        return;
-    }
 	error(parser, scanner, message);
 }
 
