@@ -455,8 +455,6 @@ static void parse_global_statement(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_while_statement(Parser* parser, Scanner* scanner) {
-    advance(scanner, parser); // eat the if keyword
-
     // save the before bool expr
     int before_bool = current_chunk(parser)->count;
 
@@ -581,7 +579,7 @@ ParseRule rules[] = {
   [TOKEN_THIS] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_TRUE] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_VAR] = {parse_variable,     NULL,   PREC_NONE},
-  [TOKEN_WHILE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_WHILE] = {parse_while_statement,     NULL,   PREC_NONE},
   [TOKEN_ERROR] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF] = {NULL,     NULL,   PREC_NONE},
 };
