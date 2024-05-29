@@ -109,7 +109,7 @@ static TokenType identifier_type(Scanner* scanner) {
 			if (scanner->current - scanner->start >= 1) {
 				switch (scanner->start[1]) {
 				case 'a': return reserved_keywords(scanner, 4, "alse", TOKEN_FALSE);
-				case 'n': return TOKEN_FN;
+				case 'n': return reserved_keywords(scanner, 1, "n", TOKEN_FN);
 				default: return TOKEN_IDENTIFIER;
 				}
 			}

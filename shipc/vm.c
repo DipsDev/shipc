@@ -191,6 +191,7 @@ static InterpretResult run(VM* vm) {
 			}
             case OP_SHOW_TOP: {
                 print_value(pop(vm));
+                printf("\n");
                 break;
             }
 			case OP_FALSE: {

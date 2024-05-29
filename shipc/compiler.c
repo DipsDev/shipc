@@ -322,28 +322,23 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_call(Parser* parser, Scanner* scanner) {
-    // allow to concat function calls, for ex: pow(2)(3)
-    printf("%u | %u", parser->current.type, parser->previous.type);
-    while (parser->current.type == TOKEN_LEFT_PAREN) {
-        advance(scanner, parser); // eat the (
 
-        // parse the call argument
-        uint8_t argument_call = 0;
-        while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_RIGHT_PAREN) {
-            parse_precedence(parser, scanner, PREC_OR); // parse the argument
-            if (parser->current.type != TOKEN_RIGHT_PAREN) {
-                expect(scanner, parser, TOKEN_COMMA, "unexpected token. expected ',' between function arguments");
-            }
-            argument_call++;
+    // parse the call argument
+    uint8_t argument_call = 0;
+    while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_RIGHT_PAREN) {
+        parse_precedence(parser, scanner, PREC_OR); // parse the argument
+        if (parser->current.type != TOKEN_RIGHT_PAREN) {
+            expect(scanner, parser, TOKEN_COMMA, "unexpected token. expected ',' between function arguments");
         }
-        if (argument_call >= UINT8_MAX) {
-            custom_error(parser, "too much call arguments");
-        }
-
-        expect(scanner, parser, TOKEN_RIGHT_PAREN,
-               "unclosed argument list of a function at"); // eat the ) => no arguments for now
-        write_bytes(current_chunk(parser), OP_CALL, argument_call);
+        argument_call++;
     }
+    if (argument_call >= UINT8_MAX) {
+        custom_error(parser, "too much call arguments");
+    }
+
+    expect(scanner, parser, TOKEN_RIGHT_PAREN,
+           "unclosed argument list of a function at"); // eat the  => no arguments for now
+           write_bytes(current_chunk(parser), OP_CALL, argument_call);
 
 	
 }
@@ -364,7 +359,6 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
 }
 
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
-	advance(scanner, parser); // eat the fn keyword
 	expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier at");
 
     // create required objects
@@ -524,6 +518,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
     switch (parser->current.type) {
         case TOKEN_FOR:
         case TOKEN_IF:
+        case TOKEN_FN:
         case TOKEN_WHILE:
             return parse_control_statement(parser, scanner);
         case TOKEN_VAR:
@@ -553,7 +548,7 @@ static void end_compile(Parser* parser, Scanner* scanner) {
 }
 
 ParseRule rules[] = {
-  [TOKEN_LEFT_PAREN] = {parse_grouping, parse_call,   PREC_NONE},
+  [TOKEN_LEFT_PAREN] = {parse_grouping, parse_call, PREC_CALL},
   [TOKEN_RIGHT_PAREN] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LEFT_BRACE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_RIGHT_BRACE] = {NULL,     NULL,   PREC_NONE},
