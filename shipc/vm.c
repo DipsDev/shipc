@@ -18,9 +18,6 @@ static void push(VM* vm, Value value) {
 	vm->sp++;
 }
 
-static void free_stack_frame(StackFrame* frame) {
-    free_object(&frame->function->obj);
-}
 
 static void push_frame(VM* vm, StackFrame frame) {
     if (vm->frameCount >= CALL_STACK_MAX) {

@@ -20,6 +20,7 @@ typedef enum {
 
 typedef struct {
 	ObjType type;
+    bool marked;
 } Obj;
 
 

@@ -6,7 +6,6 @@
 
 #include "compiler.h"
 #include "token.h"
-#include  "memory.h"
 #include "objects.h"
 
 
@@ -161,7 +160,7 @@ static void expect(Scanner* scanner, Parser* parser, TokenType type, const char 
 
 
 
-static void parse_precedence(Parser* parser, Scanner* scanner, Precedence precendence) {
+static void parse_precedence(Parser* parser, Scanner* scanner, Precedence precedence) {
 	advance(scanner, parser);
 	ParseFn rule = get_rule(parser->previous.type)->prefix;
 	if (rule == NULL) {
@@ -170,7 +169,7 @@ static void parse_precedence(Parser* parser, Scanner* scanner, Precedence precen
 	}
 	rule(parser, scanner);
 
-	while (precendence <= get_rule(parser->current.type)->precedence) {
+	while (precedence <= get_rule(parser->current.type)->precedence) {
 		advance(scanner, parser);
 		ParseFn infixRule = get_rule(parser->previous.type)->infix;
 		infixRule(parser, scanner);
@@ -264,6 +263,7 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_SUB); break;
 	case TOKEN_STAR: write_chunk(current_chunk(parser), OP_MUL); break;
 	case TOKEN_SLASH: write_chunk(current_chunk(parser), OP_DIV); break;
+    default: return; // unreachable
 	}
 }
 
@@ -579,6 +579,7 @@ static void end_compile(Parser* parser, Scanner* scanner) {
 		write_chunk(current_chunk(parser), OP_HALT);
 
         parser->func->localCount = parser->varCount;
+        free_hash_map(parser->varMap);
 
 		return;
 	}
