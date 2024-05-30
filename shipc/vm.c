@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <math.h>
 
 #include "vm.h"
 #include "memory.h"
@@ -151,6 +152,16 @@ static InterpretResult run(VM* vm) {
 				push(vm, VAR_NUMBER(-AS_NUMBER(value)));
 				break;
 			}
+      case OP_MODULO: {
+        Value b = pop(vm);
+        Value a = pop(vm);
+        if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
+          return runtime_error(vm, "modulos operator accepts only number types", ERR_TYPE);
+        }
+        double mod = fmod(AS_NUMBER(a), AS_NUMBER(b));
+        push(vm, VAR_NUMBER(mod));
+        break;
+      }
 			case OP_MUL: {
 				Value a = pop(vm);
 				Value b = pop(vm);

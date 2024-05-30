@@ -171,7 +171,8 @@ static Token scan_token(Scanner *scanner) {
 	// switch the char, and find the write token to create
 	switch (c) {
 		case '+': return create_token(scanner, TOKEN_PLUS);
-		case '*': return create_token(scanner, TOKEN_STAR); 
+		case '*': return create_token(scanner, TOKEN_STAR);
+    case '%': return create_token(scanner, TOKEN_MODULO);
 		case '/': return create_token(scanner, TOKEN_SLASH); 
 		case '-': return create_token(scanner, TOKEN_MINUS); 
 		case '{': return create_token(scanner, TOKEN_LEFT_BRACE);

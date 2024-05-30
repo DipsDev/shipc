@@ -263,6 +263,7 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_SUB, scanner->line); break;
 	case TOKEN_STAR: write_chunk(current_chunk(parser), OP_MUL, scanner->line); break;
 	case TOKEN_SLASH: write_chunk(current_chunk(parser), OP_DIV, scanner->line); break;
+  case TOKEN_MODULO: write_chunk(current_chunk(parser), OP_MODULO, scanner->line); break;
     default: return; // unreachable
 	}
 }
@@ -598,6 +599,7 @@ ParseRule rules[] = {
   [TOKEN_PLUS] = {NULL,     parse_binary, PREC_TERM},
   [TOKEN_SEMICOLON] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_SLASH] = {NULL,     parse_binary, PREC_FACTOR},
+  [TOKEN_MODULO] = {NULL, parse_binary, PREC_FACTOR},
   [TOKEN_STAR] = {NULL,     parse_binary, PREC_FACTOR},
   [TOKEN_BANG] = {parse_unary,     NULL,   PREC_NONE},
   [TOKEN_BANG_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
