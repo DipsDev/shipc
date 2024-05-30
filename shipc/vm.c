@@ -18,6 +18,10 @@ static void push(VM* vm, Value value) {
 	vm->sp++;
 }
 
+static void free_stack_frame(StackFrame frame) {
+    free_object((Obj *) frame.function);
+}
+
 
 static void push_frame(VM* vm, StackFrame frame) {
     if (vm->frameCount >= CALL_STACK_MAX) {
@@ -101,10 +105,10 @@ static InterpretResult run(VM* vm) {
                     return runtime_error(vm, "'return' outside of function", ERR_SYNTAX);
                 }
                 // clear the current frame
-                // free_stack_frame(frame);
                 vm->frameCount--;
                 // set the new frame
                 frame = &vm->callStack[vm->frameCount - 1];
+                free_stack_frame(vm->callStack[vm->frameCount]);
                 break;
 
             }
