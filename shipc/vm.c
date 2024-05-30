@@ -104,11 +104,9 @@ static InterpretResult run(VM* vm) {
                 if (frame->function->type == FN_SCRIPT) {
                     return runtime_error(vm, "'return' outside of function", ERR_SYNTAX);
                 }
-                // clear the current frame
                 vm->frameCount--;
                 // set the new frame
                 frame = &vm->callStack[vm->frameCount - 1];
-                free_stack_frame(vm->callStack[vm->frameCount]);
                 break;
 
             }
@@ -342,6 +340,7 @@ static InterpretResult run(VM* vm) {
                     Value curr_arg = pop(vm);
                     func_frame.function->locals[i - 1].value = curr_arg;
                 }
+                pop(vm);
                 frame = &vm->callStack[vm->frameCount - 1];
                 break;
 

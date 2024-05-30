@@ -16,7 +16,6 @@ static void free_function(Obj* func_obj) {
 
 	free_string((Obj *) obj->name);
 	free_chunk(&obj->body);
-	free(func_obj);
 
 }
 
