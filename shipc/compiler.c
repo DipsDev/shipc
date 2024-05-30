@@ -179,7 +179,7 @@ static void parse_precedence(Parser* parser, Scanner* scanner, Precedence preced
 static void parse_number(Parser* parser, Scanner* scanner) {
 	double value = strtod(parser->previous.start, NULL);
 	uint8_t index = add_constant(current_chunk(parser), VAR_NUMBER(value));
-	write_bytes(current_chunk(parser), OP_CONSTANT, index);
+	write_bytes(current_chunk(parser), OP_CONSTANT, index, scanner->line);
 }
 
 static void parse_grouping(Parser* parser, Scanner* scanner) {
@@ -195,28 +195,28 @@ static void parse_boolean(Parser* parser, Scanner* scanner) {
 	TokenType op = parser->previous.type;
 	parse_precedence(parser, scanner, (Precedence)(get_rule(op)->precedence + 1));
 	switch (op) {
-	case TOKEN_EQUAL_EQUAL: write_chunk(current_chunk(parser), OP_COMPARE); break;
+	case TOKEN_EQUAL_EQUAL: write_chunk(current_chunk(parser), OP_COMPARE, scanner->line); break;
 	case TOKEN_BANG_EQUAL: {
-		write_chunk(current_chunk(parser), OP_COMPARE);
-		write_chunk(current_chunk(parser), OP_NOT);
+		write_chunk(current_chunk(parser), OP_COMPARE, scanner->line);
+		write_chunk(current_chunk(parser), OP_NOT, scanner->line);
 		break;
 	}
     case TOKEN_LESS_EQUAL: {
-        write_chunk(current_chunk(parser), OP_GREATER_THAN);
-        write_chunk(current_chunk(parser), OP_NOT);
+        write_chunk(current_chunk(parser), OP_GREATER_THAN, scanner->line);
+        write_chunk(current_chunk(parser), OP_NOT, scanner->line);
         break;
     }
     case TOKEN_GREATER_EQUAL: {
-        write_chunk(current_chunk(parser), OP_LESS_THAN);
-        write_chunk(current_chunk(parser), OP_NOT);
+        write_chunk(current_chunk(parser), OP_LESS_THAN, scanner->line);
+        write_chunk(current_chunk(parser), OP_NOT, scanner->line);
         break;
     }
     case TOKEN_GREATER: {
-        write_chunk(current_chunk(parser), OP_GREATER_THAN);
+        write_chunk(current_chunk(parser), OP_GREATER_THAN, scanner->line);
         break;
     }
     case TOKEN_LESS: {
-        write_chunk(current_chunk(parser), OP_LESS_THAN);
+        write_chunk(current_chunk(parser), OP_LESS_THAN, scanner->line);
         break;
     }
         default:
@@ -237,8 +237,8 @@ static void parse_unary(Parser* parser, Scanner* scanner) {
 
 	// Emit the operator instruction.
 	switch (operatorType) {
-	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_NEGATE); break;
-	case TOKEN_BANG: write_chunk(current_chunk(parser), OP_NOT); break;
+	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_NEGATE, scanner->line); break;
+	case TOKEN_BANG: write_chunk(current_chunk(parser), OP_NOT, scanner->line); break;
 	default: return; // Unreachable.
 	}
 }
@@ -250,7 +250,7 @@ static void parse_string(Parser* parser, Scanner* scanner) {
 	// create the string object
 	StringObj* obj = create_string_obj(str, length);
 	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
-	write_bytes(current_chunk(parser), OP_CONSTANT, index);
+	write_bytes(current_chunk(parser), OP_CONSTANT, index, scanner->line);
 
 }
 
@@ -259,10 +259,10 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 	parse_precedence(parser, scanner, (Precedence)(get_rule(op)->precedence + 1));
 
 	switch (op) {
-	case TOKEN_PLUS: write_chunk(current_chunk(parser), OP_ADD); break;
-	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_SUB); break;
-	case TOKEN_STAR: write_chunk(current_chunk(parser), OP_MUL); break;
-	case TOKEN_SLASH: write_chunk(current_chunk(parser), OP_DIV); break;
+	case TOKEN_PLUS: write_chunk(current_chunk(parser), OP_ADD, scanner->line); break;
+	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_SUB, scanner->line); break;
+	case TOKEN_STAR: write_chunk(current_chunk(parser), OP_MUL, scanner->line); break;
+	case TOKEN_SLASH: write_chunk(current_chunk(parser), OP_DIV, scanner->line); break;
     default: return; // unreachable
 	}
 }
@@ -272,20 +272,20 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 
 static void parse_literal(Parser* parser, Scanner* scanner) {
 	switch (parser->previous.type) {
-	case TOKEN_FALSE: write_chunk(current_chunk(parser), OP_FALSE); break;
-	case TOKEN_TRUE: write_chunk(current_chunk(parser), OP_TRUE); break;
-	case TOKEN_NIL: write_chunk(current_chunk(parser), OP_NIL); break;
+	case TOKEN_FALSE: write_chunk(current_chunk(parser), OP_FALSE, scanner->line); break;
+	case TOKEN_TRUE: write_chunk(current_chunk(parser), OP_TRUE, scanner->line); break;
+	case TOKEN_NIL: write_chunk(current_chunk(parser), OP_NIL, scanner->line); break;
     default: return; // unreachable
 	}
 }
 
 static void parse_debug_statement(Parser* parser, Scanner* scanner) {
 	advance(scanner, parser); // eat the (
-    write_chunk(current_chunk(parser), OP_NIL); // push nil as the function doesn't return anything
+    write_chunk(current_chunk(parser), OP_NIL, scanner->line); // push nil as the function doesn't return anything
 
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_RIGHT_PAREN, "Missing parentheses in call");
-    write_chunk(current_chunk(parser), OP_SHOW_TOP);
+    write_chunk(current_chunk(parser), OP_SHOW_TOP, scanner->line);
 }
 
 static void parse_if_statement(Parser* parser, Scanner* scanner) {
@@ -294,11 +294,11 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 
 
 	// add a temp value
-	write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE);
+	write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE, scanner->line);
 
 	// save the value before the body
 	int offset = current_chunk(parser)->count;
-	write_bytes(current_chunk(parser), 0xff, 0xff);
+	write_bytes(current_chunk(parser), 0xff, 0xff, scanner->line);
 
 	expect(scanner, parser, TOKEN_LEFT_BRACE, "Expected { after if expression"); // expect open block after boolean expression
 	while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
@@ -346,7 +346,7 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 
     // add the variable | if we got here we know the variable is not initialized. therefore don't check if it exists.
     unsigned int var_index = create_variable(parser, variable_ident.start, variable_ident.length);
-    write_bytes(current_chunk(parser), OP_STORE_FAST, var_index);
+    write_bytes(current_chunk(parser), OP_STORE_FAST, var_index, scanner->line);
 }
 
 
@@ -356,10 +356,10 @@ static void parse_identifier(Parser* parser, Scanner* scanner) {
     if (var == NULL) {
         StringObj *obj = create_string_obj(parser->previous.start, parser->previous.length);
         uint8_t string_index = add_constant(current_chunk(parser), VAR_OBJ(obj));
-        write_bytes(current_chunk(parser), OP_LOAD_GLOBAL, string_index);
+        write_bytes(current_chunk(parser), OP_LOAD_GLOBAL, string_index, scanner->line);
         return;
     }
-    write_bytes(current_chunk(parser), OP_LOAD_LOCAL, var->value);
+    write_bytes(current_chunk(parser), OP_LOAD_LOCAL, var->value, scanner->line);
 }
 
 static void parse_call(Parser* parser, Scanner* scanner) {
@@ -379,7 +379,7 @@ static void parse_call(Parser* parser, Scanner* scanner) {
 
     expect(scanner, parser, TOKEN_RIGHT_PAREN,
            "Unclosed argument list of a function"); // eat the  => no arguments for now
-           write_bytes(current_chunk(parser), OP_CALL, argument_call);
+           write_bytes(current_chunk(parser), OP_CALL, argument_call, scanner->line);
 
 	
 }
@@ -389,12 +389,12 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
         error(parser, scanner,  "Invalid syntax");
     }
     if (parser->current.type == TOKEN_SEMICOLON) { // if no expression was after the return, return nil;
-        write_chunk(current_chunk(parser), OP_NIL);
+        write_chunk(current_chunk(parser), OP_NIL, scanner->line);
 
     } else {
         parse_precedence(parser, scanner, PREC_OR); // parse the value
     }
-    write_chunk(current_chunk(parser), OP_RETURN);
+    write_chunk(current_chunk(parser), OP_RETURN, scanner->line);
 }
 
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
@@ -438,7 +438,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 		
 		parse_statement(parser, scanner);
 	}
-    write_bytes(current_chunk(parser), OP_NIL, OP_RETURN);
+    write_bytes(current_chunk(parser), OP_NIL, OP_RETURN, scanner->line);
 
     free_hash_map(parser->varMap);
     parser->func->localCount = parser->varCount;
@@ -449,11 +449,11 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 
 	// Add function constant
 	uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
-	write_bytes(current_chunk(parser), OP_CONSTANT, index);
+	write_bytes(current_chunk(parser), OP_CONSTANT, index, scanner->line);
 
 	// register the function name
     unsigned int name_index = add_variable(parser, obj->name->value, obj->name->length);
-	write_bytes(current_chunk(parser), OP_STORE_FAST, name_index);
+	write_bytes(current_chunk(parser), OP_STORE_FAST, name_index, scanner->line);
 
 
 
@@ -464,7 +464,7 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 	if (parser->current.type != TOKEN_EQUAL) {
 		return parse_identifier(parser, scanner);
 	}
-    write_chunk(current_chunk(parser), OP_NIL);
+    write_chunk(current_chunk(parser), OP_NIL, scanner->line);
 	Token variable_ident = parser->previous;
     HashNode* stored_variable = get_variable(parser, variable_ident.start, variable_ident.length);
     if (stored_variable == NULL) {
@@ -475,7 +475,7 @@ static void parse_var_assignment(Parser* parser, Scanner* scanner) {
 
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 
-	write_bytes(current_chunk(parser), OP_ASSIGN_LOCAL, stored_variable->value);
+	write_bytes(current_chunk(parser), OP_ASSIGN_LOCAL, stored_variable->value, scanner->line);
 
 }
 
@@ -491,7 +491,7 @@ static void parse_global_statement(Parser* parser, Scanner* scanner) {
 
     StringObj* obj =create_string_obj(variable_ident.start, variable_ident.length);
     uint8_t index = add_constant(current_chunk(parser), VAR_OBJ(obj));
-    write_bytes(current_chunk(parser), OP_ASSIGN_GLOBAL, index);
+    write_bytes(current_chunk(parser), OP_ASSIGN_GLOBAL, index, scanner->line);
 
 }
 
@@ -503,11 +503,11 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
     parse_expression(parser, scanner);
 
     // add a temp value
-    write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE);
+    write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE, scanner->line);
 
     // save the value before the body
     int offset = current_chunk(parser)->count;
-    write_bytes(current_chunk(parser), 0xff, 0xff);
+    write_bytes(current_chunk(parser), 0xff, 0xff, scanner->line);
 
     expect(scanner, parser, TOKEN_LEFT_BRACE, "Expected { after if expression"); // expect open block after boolean expression
     while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
@@ -529,9 +529,9 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
     current_chunk(parser)->codes[offset + 1] = body_size & 0xff;
 
     // set the jump to the prev
-    write_chunk(current_chunk(parser), OP_JUMP_BACKWARD);
+    write_chunk(current_chunk(parser), OP_JUMP_BACKWARD, scanner->line);
     int total_loop_jump_size = after_body - before_bool + 3;
-    write_bytes(current_chunk(parser), (total_loop_jump_size >> 8) & 0xff, total_loop_jump_size & 0xff);
+    write_bytes(current_chunk(parser), (total_loop_jump_size >> 8) & 0xff, total_loop_jump_size & 0xff, scanner->line);
 
 }
 
@@ -540,7 +540,7 @@ static void parse_expression_statement(Parser* parser, Scanner* scanner) {
 	// for ex: call(a,b,c);
 	parse_expression(parser, scanner);
 	expect(scanner, parser, TOKEN_SEMICOLON, "Expected ;");
-	write_chunk(current_chunk(parser), OP_POP_TOP);
+	write_chunk(current_chunk(parser), OP_POP_TOP, scanner->line);
 }
 
 static void parse_control_statement(Parser* parser, Scanner* scanner) {
@@ -576,7 +576,7 @@ static void parse_expression(Parser* parser, Scanner* scanner) {
 
 static void end_compile(Parser* parser, Scanner* scanner) {
 	if (parser->current.type == TOKEN_EOF) {
-		write_chunk(current_chunk(parser), OP_HALT);
+		write_chunk(current_chunk(parser), OP_HALT, scanner->line);
 
         parser->func->localCount = parser->varCount;
         free_hash_map(parser->varMap);

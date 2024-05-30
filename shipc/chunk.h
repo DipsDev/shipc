@@ -40,13 +40,14 @@ typedef struct { // store a chunk of bytecode
 	int capacity; // available total capacity
 
 	ValueArray constants; // constant pool
+    int * lines;
 } Chunk;
 
 
 void init_chunk(Chunk* chunk);
 void free_chunk(Chunk* chunk);
-void write_chunk(Chunk* chunk, uint8_t byte);
-void write_bytes(Chunk* chunk, uint8_t byte, uint8_t byte2);
+void write_chunk(Chunk* chunk, uint8_t byte, int line);
+void write_bytes(Chunk* chunk, uint8_t byte, uint8_t byte2, int line);
 uint8_t add_constant(Chunk* chunk, Value constant);
 void change_constant(Chunk* chunk, uint8_t index, Value constant);
 
