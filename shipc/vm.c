@@ -50,6 +50,14 @@ static Value peek_behind(VM* vm, int behind) {
     return *(vm->sp - behind);
 }
 
+static void throw_error(VM* vm, ErrorObj* err) {
+    StackFrame errored_chunk = vm->callStack[vm->frameCount - 1];
+    int code_offset = (errored_chunk.ip - errored_chunk.function->body.codes);
+
+    fprintf(stderr, "runtime error: %.*s\n  [main.ship:%i]\n",
+            err->value->length, err->value->value, errored_chunk.function->body.lines[code_offset]);
+}
+
 static InterpretResult runtime_error(VM* vm, const char* message, ErrorType type, ...) {
     // creates an informative error message, and returns it
     char temp[256] = {0};
@@ -88,7 +96,7 @@ InterpretResult interpret(VM* vm, FunctionObj* main_script) {
     if(end_value == RESULT_ERROR) {
         Value error_value = pop(vm);
         ErrorObj* err_obj = (ErrorObj*) AS_OBJ(error_value);
-        fprintf(stderr, "[ERROR] %.*s", err_obj->value->length, err_obj->value->value);
+        throw_error(vm, err_obj);
         return RESULT_ERROR;
     }
     return RESULT_SUCCESS;
@@ -105,9 +113,6 @@ static InterpretResult run(VM* vm) {
 		uint8_t opcode = READ_BYTE();
 		switch (opcode) {
             case OP_RETURN: {
-                if (frame->function->type == FN_SCRIPT) {
-                    return runtime_error(vm, "'return' outside of function", ERR_SYNTAX);
-                }
                 vm->frameCount--;
                 // set the new frame
                 frame = &vm->callStack[vm->frameCount - 1];
