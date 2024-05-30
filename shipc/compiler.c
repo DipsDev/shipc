@@ -118,7 +118,7 @@ static void custom_error(Parser* parser, const char* string, ...) {
 }
 
 static void synchronize(Parser* parser, Scanner* scanner) {
-    while (parser->previous.type != TOKEN_EOF && parser->previous.type != TOKEN_SEMICOLON) {
+    while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_SEMICOLON) {
         advance(scanner, parser);
     }
 }
