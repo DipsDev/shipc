@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "vm.h"
+#include "memory.h"
 #include "objects.h"
 
 static InterpretResult run (VM* vm);
@@ -68,6 +69,9 @@ void init_vm(VM* vm) {
 	// set the sp to the beginning of the stack
 	vm->sp = vm->stack;
 
+    // create the objects arrays
+    vm->objects = NULL;
+
 }
 
 void free_vm(VM* vm) {
@@ -115,7 +119,15 @@ static InterpretResult run(VM* vm) {
                 return RESULT_SUCCESS;
             }
 			case OP_CONSTANT: {
-				push(vm, READ_CONSTANT());
+                collect_garbage(vm);
+                Value constant = READ_CONSTANT();
+                if (IS_OBJ(constant)) {
+                    Obj* const_obj = AS_OBJ(constant);
+                    const_obj->next = (struct Obj *) vm->objects;
+                    vm->objects = const_obj;
+                }
+
+				push(vm, constant);
 				break;
 			}
 			case OP_NOT: {

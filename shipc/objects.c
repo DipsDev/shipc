@@ -75,7 +75,8 @@ static Obj* allocate_object(ObjType type) {
 		printf("[ERROR] cannot allocate object. exiting...\n");
 		exit(1);
 	}
-    object->marked = false;
+    object->isMarked = false;
+    object->next = NULL;
 	object->type = type;
 	return object;
 }

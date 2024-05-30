@@ -33,6 +33,7 @@ typedef struct {
 
 	// objects
 	Value stack[STACK_MAX]; // value stack
+    Obj* objects;
 
 } VM;
 

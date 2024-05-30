@@ -21,6 +21,6 @@ void* reallocate(void* pointer, size_t oldCapacity, size_t newCapacity);
 void mark_value(Value value);
 void mark_object(Obj* obj);
 
-void mark_vm(VM* vm);
+void collect_garbage(VM* vm);
 
 #endif // SHIP_MEMORY_H_
