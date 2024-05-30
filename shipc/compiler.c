@@ -386,7 +386,8 @@ static void parse_call(Parser* parser, Scanner* scanner) {
 
 static void parse_return_statement(Parser* parser, Scanner* scanner) {
     if (parser->func->type == FN_SCRIPT) {
-        error(parser, scanner,  "Invalid syntax");
+        parser->current = parser->previous;
+        error(parser, scanner,  "Return keyword outside of function");
     }
     if (parser->current.type == TOKEN_SEMICOLON) { // if no expression was after the return, return nil;
         write_chunk(current_chunk(parser), OP_NIL, scanner->line);
