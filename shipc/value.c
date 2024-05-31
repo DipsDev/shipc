@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "memory.h"
 #include "value.h"
@@ -51,9 +52,11 @@ static void print_object(Value obj_val) {
         printf("%.*s", str_obj->length, str_obj->value);
         break;
     }
-        case OBJ_FUNCTION:
-            printf("Printing a function, how did you get here???");
+        case OBJ_FUNCTION: {
+            FunctionObj *func = AS_FUNCTION(obj_val);
+            printf("<function %.*s at %p>", func->name->length, func->name->value, func);
             break;
+        }
         case OBJ_ERROR:
             break;
     }
@@ -63,7 +66,14 @@ void print_value(Value val) {
 	switch (val.type) {
 	case VAL_BOOL: printf("%s", AS_BOOL(val) ? "true" : "false"); break;
 	case VAL_NIL: printf("nil"); break;
-	case VAL_NUMBER: printf("%f", AS_NUMBER(val)); break;
+	case VAL_NUMBER:  {
+        double dummy;
+        if (modf(AS_NUMBER(val), &dummy) == 0) {
+            printf("%.0f", AS_NUMBER(val)); break;
+            return;
+        }
+        printf("%f", AS_NUMBER(val)); break;
+    }
 	case VAL_OBJ: print_object(val); break;
 	}
 }
