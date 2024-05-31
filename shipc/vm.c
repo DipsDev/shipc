@@ -203,8 +203,10 @@ static InterpretResult run(VM* vm) {
 					StringObj* str_a = AS_STRING(a);
 					StringObj* str_b = AS_STRING(b);
 
-					
+                    collect_garbage(vm);
 					StringObj* concat = concat_strings(str_a->value, str_a->length, str_b->value, str_b->length);
+                    add_garbage(vm, VAR_OBJ(concat));
+
 
 					push(vm, VAR_OBJ(concat));
 					break;

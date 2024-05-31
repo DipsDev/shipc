@@ -48,7 +48,7 @@ static void pop_free_head(Obj ** head) {
 
     free_object(*head);
 
-    head = &next_node;
+    *head = next_node;
 
 }
 
@@ -62,6 +62,7 @@ static void pop_free_next(Obj ** prev) {
 static void sweep(VM* vm) {
     Obj* prev = NULL;
     Obj* pos = (Obj *) vm->objects;
+    int before_objs = vm->heapObjects;
     while (pos != NULL) {
         if (pos->isMarked) {
             pos->isMarked = false;
@@ -77,7 +78,9 @@ static void sweep(VM* vm) {
             pop_free_next(&prev);
             pos = (Obj*) prev->next;
         }
+        vm->heapObjects--;
     }
+    printf("GC: Finished cleaning %i objects\n", before_objs - vm->heapObjects);
 }
 
 void add_garbage(VM* vm, Value value) {
@@ -93,7 +96,13 @@ void add_garbage(VM* vm, Value value) {
 }
 
 void collect_garbage(VM* vm) {
+    // don't gc if the capacity isn't overflowing
+    if (vm->heapObjects + 1 < vm->heapCapacity) return;
+    // mark and sweep
     mark_variables(vm);
     sweep(vm);
+
+    // bop the capacity to reduce collection
+    vm->heapCapacity *= 2;
 
 }
