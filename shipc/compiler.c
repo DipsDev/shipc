@@ -119,7 +119,8 @@ static void custom_error(Parser* parser, const char* string, ...) {
 
 static void synchronize(Parser* parser, Scanner* scanner) {
     while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_SEMICOLON) {
-        advance(scanner, parser);
+        parser->previous = parser->current;
+        parser->current = tokenize(scanner);
     }
 }
 
@@ -145,7 +146,7 @@ static void advance(Scanner* scanner, Parser* parser) {
 	for (;;) {
 		parser->current = tokenize(scanner);
 		if (parser->current.type != TOKEN_ERROR) return;
-        custom_error(parser,  "parsing error");
+        error(parser,  scanner, "Unknown token encountered");
 
 	}
 }
@@ -263,7 +264,7 @@ static void parse_binary(Parser* parser, Scanner* scanner) {
 	case TOKEN_MINUS: write_chunk(current_chunk(parser), OP_SUB, scanner->line); break;
 	case TOKEN_STAR: write_chunk(current_chunk(parser), OP_MUL, scanner->line); break;
 	case TOKEN_SLASH: write_chunk(current_chunk(parser), OP_DIV, scanner->line); break;
-  case TOKEN_MODULO: write_chunk(current_chunk(parser), OP_MODULO, scanner->line); break;
+    case TOKEN_MODULO: write_chunk(current_chunk(parser), OP_MODULO, scanner->line); break;
     default: return; // unreachable
 	}
 }
@@ -336,12 +337,6 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
 	advance(scanner, parser);
 	expect(scanner, parser, TOKEN_EQUAL, "Expected '=' after variable declaration");
 
-    if (get_rule(parser->current.type)->precedence == PREC_NONE) {
-        error(parser, scanner, "Unexpected token");
-        return;
-    }
-
-
 	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
 
 
@@ -350,9 +345,30 @@ static void parse_variable(Parser* parser, Scanner* scanner) {
     write_bytes(current_chunk(parser), OP_STORE_FAST, var_index, scanner->line);
 }
 
+static void parse_var_assignment(Parser* parser, Scanner* scanner) {
+    write_chunk(current_chunk(parser), OP_NIL, scanner->line);
+    Token variable_ident = parser->previous;
+    HashNode* stored_variable = get_variable(parser, variable_ident.start, variable_ident.length);
+    if (stored_variable == NULL) {
+        custom_error(parser, "variable '%.*s' is not defined in the current scope. did you mean 'glob %.*s = ...'", variable_ident.length, variable_ident.start, variable_ident.length, variable_ident.start);
+        exit(1);
+    }
+    expect(scanner, parser, TOKEN_EQUAL, "Expected '=' after variable declaration at");
+
+    parse_precedence(parser, scanner, PREC_OR); // parse the expression value
+
+    write_bytes(current_chunk(parser), OP_ASSIGN_LOCAL, stored_variable->value, scanner->line);
+
+}
+
+
 
 static void parse_identifier(Parser* parser, Scanner* scanner) {
-    // add the ident string to the pool so we can either call or load it
+    if (parser->current.type == TOKEN_EQUAL) {
+        return parse_var_assignment(parser, scanner);
+    }
+
+    // add the ident string to the pool so we can either call or load i
     HashNode *var = get_variable(parser, parser->previous.start, parser->previous.length);
     if (var == NULL) {
         StringObj *obj = create_string_obj(parser->previous.start, parser->previous.length);
@@ -462,26 +478,6 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 }
 
 
-static void parse_var_assignment(Parser* parser, Scanner* scanner) {
-	if (parser->current.type != TOKEN_EQUAL) {
-		return parse_identifier(parser, scanner);
-	}
-    write_chunk(current_chunk(parser), OP_NIL, scanner->line);
-	Token variable_ident = parser->previous;
-    HashNode* stored_variable = get_variable(parser, variable_ident.start, variable_ident.length);
-    if (stored_variable == NULL) {
-        custom_error(parser, "variable '%.*s' is not defined in the current scope. did you mean 'glob %.*s = ...'", variable_ident.length, variable_ident.start, variable_ident.length, variable_ident.start);
-        exit(1);
-    }
-	expect(scanner, parser, TOKEN_EQUAL, "Expected '=' after variable declaration at");
-
-	parse_precedence(parser, scanner, PREC_OR); // parse the expression value
-
-	write_bytes(current_chunk(parser), OP_ASSIGN_LOCAL, stored_variable->value, scanner->line);
-
-}
-
-
 static void parse_global_statement(Parser* parser, Scanner* scanner) {
     advance(scanner, parser); // eat the glob keyword
     Token variable_ident = parser->current;
@@ -504,6 +500,7 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
     // parse the bool expr
     parse_expression(parser, scanner);
 
+
     // add a temp value
     write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE, scanner->line);
 
@@ -519,9 +516,10 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
     // expect user closing the if body
     expect(scanner, parser, TOKEN_RIGHT_BRACE, "Expected } after open block");
 
+
     // calculate the new size of the body, and modify the jmp size
-    int after_body = current_chunk(parser)->count;
-    int body_size = after_body - offset - 1; // subtract 2 because the if and the value
+    int after_body = current_chunk(parser)->count; // add 3 because the JMP_BACK instruction is 3 uint8_t long
+    int body_size = after_body - offset + 1;
     if (body_size > UINT16_MAX) {
         error(parser, scanner, "Max jump length exceeded");
     }
@@ -532,7 +530,7 @@ static void parse_while_statement(Parser* parser, Scanner* scanner) {
 
     // set the jump to the prev
     write_chunk(current_chunk(parser), OP_JUMP_BACKWARD, scanner->line);
-    int total_loop_jump_size = after_body - before_bool + 3;
+    int total_loop_jump_size = current_chunk(parser)->count + 2 - before_bool; // add 2 to account for the upcoming 2 bytes of data vvvvvvvv
     write_bytes(current_chunk(parser), (total_loop_jump_size >> 8) & 0xff, total_loop_jump_size & 0xff, scanner->line);
 
 }
@@ -609,20 +607,20 @@ ParseRule rules[] = {
   [TOKEN_GREATER_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
   [TOKEN_LESS] = {NULL,     parse_boolean,   PREC_EQUALITY},
   [TOKEN_LESS_EQUAL] = {NULL,     parse_boolean,   PREC_EQUALITY},
-  [TOKEN_IDENTIFIER] = {parse_var_assignment,     NULL,   PREC_PRIMARY},
-  [TOKEN_STRING] = {parse_string,     NULL,   PREC_PRIMARY},
-  [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_PRIMARY},
+  [TOKEN_IDENTIFIER] = {parse_identifier,    NULL,   PREC_NONE},
+  [TOKEN_STRING] = {parse_string,     NULL,   PREC_NONE},
+  [TOKEN_NUMBER] = {parse_number,   NULL,   PREC_NONE},
   [TOKEN_ELSE] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_PRIMARY},
+  [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_FN] = {parse_func_statement, NULL, PREC_NONE},
   [TOKEN_FOR] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IF] = {parse_if_statement,     NULL,   PREC_NONE},
-  [TOKEN_NIL] = {parse_literal,     NULL,   PREC_PRIMARY},
+  [TOKEN_NIL] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_PRINT] = {parse_debug_statement,     NULL,   PREC_NONE},
   [TOKEN_RETURN] = {parse_return_statement,     NULL,   PREC_NONE},
   [TOKEN_SUPER] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_THIS] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_TRUE] = {parse_literal,     NULL,   PREC_PRIMARY},
+  [TOKEN_TRUE] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_VAR] = {parse_variable,     NULL,   PREC_NONE},
   [TOKEN_WHILE] = {parse_while_statement,     NULL,   PREC_NONE},
   [TOKEN_ERROR] = {NULL,     NULL,   PREC_NONE},

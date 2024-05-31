@@ -125,7 +125,7 @@ static InterpretResult run(VM* vm) {
                 return RESULT_SUCCESS;
             }
 			case OP_CONSTANT: {
-                collect_garbage(vm);
+                // collect_garbage(vm);
                 Value constant = READ_CONSTANT();
                 if (IS_OBJ(constant)) {
                     Obj* const_obj = AS_OBJ(constant);
@@ -152,16 +152,16 @@ static InterpretResult run(VM* vm) {
 				push(vm, VAR_NUMBER(-AS_NUMBER(value)));
 				break;
 			}
-      case OP_MODULO: {
-        Value b = pop(vm);
-        Value a = pop(vm);
-        if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
-          return runtime_error(vm, "modulos operator accepts only number types", ERR_TYPE);
-        }
-        double mod = fmod(AS_NUMBER(a), AS_NUMBER(b));
-        push(vm, VAR_NUMBER(mod));
-        break;
-      }
+            case OP_MODULO: {
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
+                    return runtime_error(vm, "modulos operator accepts only number types", ERR_TYPE);
+                }
+                double mod = fmod(AS_NUMBER(a), AS_NUMBER(b));
+                push(vm, VAR_NUMBER(mod));
+                break;
+            }
 			case OP_MUL: {
 				Value a = pop(vm);
 				Value b = pop(vm);

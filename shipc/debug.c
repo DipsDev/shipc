@@ -61,10 +61,10 @@ static int constant_instruction(Chunk* chunk, int offset) {
 	return 2;
 }
 
-static int jump_instruction(Chunk* chunk, int offset) {
+static int jump_instruction(Chunk* chunk, char* op_code, int offset) {
 	uint8_t d1 = chunk->codes[offset + 1];
 	uint8_t d2 = chunk->codes[offset + 2];
-	printf("| %04d OP_JUMP (%u) |\n", offset, (((uint16_t)d1 << 8) | d2));
+	printf("| %04d %s (%u) |\n",  offset, op_code, (((uint16_t)d1 << 8) | d2));
 	return 3;
 }
 
@@ -89,8 +89,8 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_NIL:return simple_instruction("OP_NIL", offset);
 		case OP_STORE_FAST: return variable_instruction(func, "OP_STORE_FAST", offset);
 		case OP_LOAD_GLOBAL: return global_variable_instruction(func, "OP_LOAD_GLOBAL", offset);
-		case OP_POP_JUMP_IF_FALSE:
-        case OP_JUMP_BACKWARD: return jump_instruction(&func->body, offset);
+		case OP_POP_JUMP_IF_FALSE: return jump_instruction(&func->body, "POP_JUMP_FALSE", offset);
+        case OP_JUMP_BACKWARD: return jump_instruction(&func->body, "POP_JMP_BACK", offset);
         case OP_SHOW_TOP: return simple_instruction("OP_SHOW_TOP", offset);
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);

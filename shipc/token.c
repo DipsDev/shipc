@@ -48,6 +48,8 @@ static Token create_error_token(Scanner *scanner) {
 	tkn.start = scanner->start;
 	tkn.type = TOKEN_ERROR;
 	tkn.line = scanner->line;
+    tkn.lineOffset = scanner->lineOffset;
+    scanner->lineOffset += tkn.length;
 	return tkn;
 }
 

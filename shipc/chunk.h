@@ -14,7 +14,7 @@ typedef enum { // available op codes
 	OP_CALL,
 	OP_NIL,
 	OP_ADD,
-  OP_MODULO,
+    OP_MODULO,
 	OP_SUB,
 	OP_STORE_FAST,
     OP_LOAD_LOCAL,
