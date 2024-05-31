@@ -103,7 +103,7 @@ static void error(Parser* parser, Scanner* scanner, const char* message) {
     if (*temp == ';') {
         line_length++;
     }
-	fprintf(stderr, "error: %s\n  [main.ship:%i:%i]\n  |\n%i | %.*s\n  |%*s^^^^ \n",
+	fprintf(stderr, "error: %s\n    [main.ship:%i:%i]\n    |\n%03i | %.*s\n    |%*s^^^^ \n",
             message, parser->current.line, parser->current.lineOffset, parser->current.line, line_length, parser->current.start - parser->current.lineOffset, parser->current.lineOffset, " ");
 	parser->hadError = true;
     synchronize(parser, scanner);
@@ -118,9 +118,25 @@ static void custom_error(Parser* parser, const char* string, ...) {
 }
 
 static void synchronize(Parser* parser, Scanner* scanner) {
-    while (parser->current.type != TOKEN_EOF && parser->current.type != TOKEN_SEMICOLON) {
-        parser->previous = parser->current;
-        parser->current = tokenize(scanner);
+    for (;;) {
+        switch(parser->current.type) {
+            case TOKEN_EOF:
+            case TOKEN_IF:
+            case TOKEN_VAR:
+            case TOKEN_FN:
+            case TOKEN_WHILE:
+            case TOKEN_SEMICOLON:
+            case TOKEN_LEFT_PAREN:
+                case TOKEN_LEFT_BRACE:
+            case TOKEN_RIGHT_PAREN:
+            case TOKEN_RIGHT_BRACE:
+                return;
+            default: {
+                parser->previous = parser->current;
+                parser->current = tokenize(scanner);
+            }
+        }
+
     }
 }
 

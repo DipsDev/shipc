@@ -80,6 +80,8 @@ void init_vm(VM* vm) {
 
     // create the objects arrays
     vm->objects = NULL;
+    vm->heapObjects = 0;
+    vm->heapCapacity = 8;
 
 }
 
@@ -125,14 +127,17 @@ static InterpretResult run(VM* vm) {
                 return RESULT_SUCCESS;
             }
 			case OP_CONSTANT: {
-                // collect_garbage(vm);
+                if (vm->heapObjects + 1 >= vm->heapCapacity) {
+                    collect_garbage(vm);
+                    vm->heapCapacity *= 2;
+                }
                 Value constant = READ_CONSTANT();
                 if (IS_OBJ(constant)) {
                     Obj* const_obj = AS_OBJ(constant);
                     const_obj->next = (struct Obj *) vm->objects;
                     vm->objects = const_obj;
                 }
-
+                vm->heapObjects++;
 				push(vm, constant);
 				break;
 			}

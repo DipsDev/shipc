@@ -34,6 +34,8 @@ typedef struct {
 	// objects
 	Value stack[STACK_MAX]; // value stack
     Obj* objects;
+    int heapObjects;
+    int heapCapacity;
 
 } VM;
 
