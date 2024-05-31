@@ -220,6 +220,9 @@ static InterpretResult run(VM* vm) {
 				if (!IS_NUMBER(a) || !IS_NUMBER(b)) {
 					return runtime_error(vm, "/ operator accepts only numbers", ERR_TYPE);
 				}
+                if (AS_NUMBER(b) == 0) {
+                    return runtime_error(vm, "cannot divide by 0", ERR_SYNTAX);
+                }
 				double mul = AS_NUMBER(a) / AS_NUMBER(b);
 				push(vm, VAR_NUMBER(mul));
 				break;
