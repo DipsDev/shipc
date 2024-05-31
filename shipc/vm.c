@@ -127,17 +127,7 @@ static InterpretResult run(VM* vm) {
                 return RESULT_SUCCESS;
             }
 			case OP_CONSTANT: {
-                if (vm->heapObjects + 1 >= vm->heapCapacity) {
-                    collect_garbage(vm);
-                    vm->heapCapacity *= 2;
-                }
                 Value constant = READ_CONSTANT();
-                if (IS_OBJ(constant)) {
-                    Obj* const_obj = AS_OBJ(constant);
-                    const_obj->next = (struct Obj *) vm->objects;
-                    vm->objects = const_obj;
-                }
-                vm->heapObjects++;
 				push(vm, constant);
 				break;
 			}

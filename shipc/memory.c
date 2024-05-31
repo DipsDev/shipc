@@ -37,25 +37,59 @@ static void mark_variables(VM* vm) {
     }
 }
 
+static void pop_free_head(Obj ** head) {
+    Obj* next_node = NULL;
+
+    if (*head == NULL) {
+        printf("pop_free_head got empty list");
+        return;
+    }
+    next_node = (Obj *) (*head)->next;
+
+    free_object(*head);
+
+    head = &next_node;
+
+}
+
+static void pop_free_next(Obj ** prev) {
+    Obj* aim_node = (Obj *) (*prev)->next;
+    (*prev)->next = (struct Obj *) aim_node->next;
+    free_object(aim_node);
+
+}
+
 static void sweep(VM* vm) {
     Obj* prev = NULL;
-    Obj* pos = vm->objects;
+    Obj* pos = (Obj *) vm->objects;
     while (pos != NULL) {
         if (pos->isMarked) {
             pos->isMarked = false;
             prev = pos;
             pos = (Obj *) pos->next;
+            continue;
+        }
+        if (prev == NULL) {
+            pop_free_head((Obj **) &vm->objects);
+            prev = (Obj *) vm->objects;
+            pos = (Obj *) prev->next;
         } else {
-            if (prev == NULL) {
-                vm->objects = (Obj *) pos->next;
-            } else {
-                prev->next = pos->next;
-            }
-            Obj* temp = (Obj *) pos->next;
-            free_object(pos);
-            pos = temp;
+            pop_free_next(&prev);
+            pos = (Obj*) prev->next;
         }
     }
+}
+
+void add_garbage(VM* vm, Value value) {
+    if (!IS_OBJ(value)) return;
+    Obj *const_obj = AS_OBJ(value);
+    // append the new obj to the head of the list
+    Obj **head = (Obj **) &vm->objects;
+
+    const_obj->next = (struct Obj *) *head;
+    *head = const_obj;
+
+    vm->heapObjects++;
 }
 
 void collect_garbage(VM* vm) {
