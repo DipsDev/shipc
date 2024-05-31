@@ -306,6 +306,26 @@ static void parse_debug_statement(Parser* parser, Scanner* scanner) {
     write_chunk(current_chunk(parser), OP_SHOW_TOP, scanner->line);
 }
 
+static void parse_else_statement(Parser* parser, Scanner* scanner) {
+    write_chunk(current_chunk(parser), OP_JUMP, scanner->line);
+    int else_goto_offset = current_chunk(parser)->count;
+    write_bytes(current_chunk(parser), 0xff, 0xff, scanner->line); // save the goto to jump over the else block
+
+
+    advance(scanner, parser); // eat the while
+    expect(scanner, parser, TOKEN_LEFT_BRACE, "Expected '{' after else expression");
+    while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
+        // parse the body of the if statement
+        parse_statement(parser, scanner);
+    }
+    expect(scanner, parser, TOKEN_RIGHT_BRACE, "Unclosed '}' after block");
+
+    // apply and calculate the new changes
+    int jmp_size = current_chunk(parser)->count - else_goto_offset - 2;
+    current_chunk(parser)->codes[else_goto_offset] = (jmp_size >> 8) & 0xff;
+    current_chunk(parser)->codes[else_goto_offset + 1] = jmp_size & 0xff;
+}
+
 static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	// parse the bool expr
 	parse_expression(parser, scanner);
@@ -315,7 +335,7 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 	write_chunk(current_chunk(parser), OP_POP_JUMP_IF_FALSE, scanner->line);
 
 	// save the value before the body
-	int offset = current_chunk(parser)->count;
+	int change_bytes_offset = current_chunk(parser)->count;
 	write_bytes(current_chunk(parser), 0xff, 0xff, scanner->line);
 
 	expect(scanner, parser, TOKEN_LEFT_BRACE, "Expected { after if expression"); // expect open block after boolean expression
@@ -324,18 +344,27 @@ static void parse_if_statement(Parser* parser, Scanner* scanner) {
 		parse_statement(parser, scanner);
 	}
 	// expect user closing the if body
-	expect(scanner, parser, TOKEN_RIGHT_BRACE, "Expected } after open block");
+	expect(scanner, parser, TOKEN_RIGHT_BRACE, "Unclosed '}' after block");
 
 	// calculate the new size of the body, and modify the jmp size
-	int after_body = current_chunk(parser)->count;
-	int body_size = after_body - offset - 2; // subtract 2 because the if and the value
+	int body_size = current_chunk(parser)->count - change_bytes_offset - 2;
 	if (body_size > UINT16_MAX) {
 		error(parser, scanner, "max jump length exceeded");
 	}
+    // test for else statement
+    if (parser->current.type != TOKEN_ELSE) {
+        current_chunk(parser)->codes[change_bytes_offset] = (body_size >> 8) & 0xff;
+        current_chunk(parser)->codes[change_bytes_offset + 1] = body_size & 0xff;
+        return;
+    }
 
-	// set the new size
-	current_chunk(parser)->codes[offset] = (body_size >> 8) & 0xff;
-	current_chunk(parser)->codes[offset + 1] = body_size & 0xff;
+	// set the new size, the new size is 2 bytes long. to allow large jumps;
+    body_size += 3; // add 3 because we add another jmp
+	current_chunk(parser)->codes[change_bytes_offset] = (body_size >> 8) & 0xff;
+	current_chunk(parser)->codes[change_bytes_offset + 1] = body_size & 0xff;
+
+    parse_else_statement(parser, scanner);
+
 }
 
 static void parse_variable(Parser* parser, Scanner* scanner) {

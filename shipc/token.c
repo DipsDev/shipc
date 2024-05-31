@@ -110,6 +110,7 @@ static TokenType identifier_type(Scanner* scanner) {
 	switch (*(scanner->start))
 	{
 		case 'v': return reserved_keywords(scanner, 2, "ar", TOKEN_VAR);
+        case 'e': return reserved_keywords(scanner, 3, "lse", TOKEN_ELSE);
 		case 'f': {
 			if (scanner->current - scanner->start >= 1) {
 				switch (scanner->start[1]) {

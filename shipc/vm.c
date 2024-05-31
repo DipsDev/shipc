@@ -283,6 +283,12 @@ static InterpretResult run(VM* vm) {
 				break;
 
 			}
+            case OP_JUMP: {
+                uint16_t jmp_size = READ_SHORT();
+                frame->ip += (int) jmp_size;
+                break;
+
+            }
             case OP_JUMP_BACKWARD: {
                 uint16_t jmp_size = READ_SHORT();
                 frame->ip -= (int) jmp_size;
