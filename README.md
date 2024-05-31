@@ -2,15 +2,15 @@
 
 #### This is probably my last implementation of ship. but now in C.
 
-This project served as a learning project to learn the C language.\
+This project served as a learning project for the C language.\
 I might have made some mistakes here and there, and I will continue to improve on this language.\
-I will expand the language features here, once I finish most.\
 
-The language is 100% custom-made, with its own VM and bytecode version.
+The language is 100% custom-made, with its own VM and bytecode version.\
+Ship is a dynamic, high-level garbage-collected language inspired by javascript and lua.\
+Ship uses curly braces (`{}`) to identify blocks, and signifies end of statements with `;`
 
 
 ## Features
-Most of ship's statements are terminated using the `;` letter.
 
 ### Values
 Ship has 4 types of values.
@@ -56,7 +56,7 @@ fn my_print(str) {
 }
 ```
 which then can be called using
-```
+```javascript
 my_print("Hello From Ship!");
 ```
 
@@ -93,7 +93,7 @@ What a blast!
 - Math expressions (Done)
 - Functions (Done)
 - Function arguments (Done)
-- Garbage collector
+- Garbage collector (Done ish)
 
 
 
@@ -111,7 +111,7 @@ a()
 ```
 
 And it's .ship version:
-```
+```rust
 fn a() {
     var x = 100000000;
     while x != 0 {
