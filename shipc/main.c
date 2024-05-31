@@ -36,29 +36,6 @@ static char* read_source_code() {
     return buffer;
 }
 
-void run_timed() {
-    clock_t t;
-    t = clock();
-    FunctionObj* compiled_func = compile(read_source_code());
-    if (compiled_func == NULL) {
-        exit(1);
-    }
-    t = clock() - t;
-    printf("\nProgram took %f seconds to compile\n", (double) t / CLOCKS_PER_SEC);
-    disassemble_func(compiled_func);
-
-    VM vm;
-    init_vm(&vm);
-    t = clock();
-    interpret(&vm, compiled_func);
-
-    free_vm(&vm);
-
-    t = clock() - t;
-    double time_taken = ((double) t / CLOCKS_PER_SEC);
-    printf("\nProgram took %f seconds to execute\n", time_taken);
-}
-
 void run_code() {
     FunctionObj* compiled_func = compile(read_source_code());
     if (compiled_func == NULL) {
@@ -75,13 +52,6 @@ void run_code() {
 }
 
 int main(int argc, char** argv) {
-    if (argc == 1) {
-        run_code();
-    }
-    else if (argc == 2 && memcpy(argv[1], "-t", strlen(argv[1]))) {
-        run_timed();
-    } else {
-        return 1;
-    }
+    run_code();
 	return 0;
 }

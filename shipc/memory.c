@@ -80,7 +80,7 @@ static void sweep(VM* vm) {
         }
         vm->heapObjects--;
     }
-    printf("GC: Finished cleaning %i objects\n", before_objs - vm->heapObjects);
+    printf("GC: Finished cleaning %i / %i objects\n", before_objs - vm->heapObjects, before_objs);
 }
 
 void add_garbage(VM* vm, Value value) {
