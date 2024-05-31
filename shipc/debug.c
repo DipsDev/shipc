@@ -92,6 +92,7 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_POP_JUMP_IF_FALSE: return jump_instruction(&func->body, "POP_JUMP_FALSE", offset);
         case OP_JUMP_BACKWARD: return jump_instruction(&func->body, "POP_JMP_BACK", offset);
         case OP_SHOW_TOP: return simple_instruction("OP_SHOW_TOP", offset);
+        case OP_MODULO: return simple_instruction("OP_MODULO", offset);
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
         case OP_RETURN: return simple_instruction("OP_RETURN", offset);
