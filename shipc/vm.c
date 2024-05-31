@@ -306,6 +306,7 @@ static InterpretResult run(VM* vm) {
 				break;
 			}
 			case OP_ASSIGN_GLOBAL: {
+                collect_garbage(vm);
                 Value  var_name = READ_CONSTANT();
                 if (!IS_STRING(var_name)) {
                     return runtime_error(vm, "global variable should be a string.", ERR_SYNTAX);
@@ -319,6 +320,7 @@ static InterpretResult run(VM* vm) {
                         Local current_local = curr->function->locals[j];
                         if (current_local.length == var_str->length && strncmp(current_local.name, var_str->value, current_local.length) == 0) {
                             curr->function->locals[j].value = pop(vm);
+                            add_garbage(vm, curr->function->locals[j].value);
                             goto var_found;
                         }
                     }
@@ -331,9 +333,11 @@ static InterpretResult run(VM* vm) {
                 break;
             }
             case OP_ASSIGN_LOCAL: {
+                collect_garbage(vm);
                 Value val = pop(vm);
                 uint8_t variable_index = READ_BYTE();
                 frame->function->locals[variable_index].value = val;
+                add_garbage(vm, val);
                 break;
             }
 			case OP_LOAD_GLOBAL: {
