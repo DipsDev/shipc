@@ -4,6 +4,17 @@
 
 #include "objects.h"
 
+static Obj* allocate_object(size_t size, ObjType type) {
+    Obj* c_obj = (Obj*) malloc(size);
+    c_obj->type = type;
+    c_obj->isMarked = false;
+    c_obj->next = NULL;
+    return c_obj;
+}
+
+#define ALLOCATE_OBJECT(Obj, type) \
+    ((Obj*) allocate_object(sizeof(Obj), type))
+
 // <---- freeing related functions ----->
 static void free_string(Obj* str_obj) {
 	StringObj* obj = (StringObj*)str_obj;
@@ -53,39 +64,27 @@ bool compare_objects(Obj* obj1, Obj* obj2) {
 		return false;
 	}
 	switch (obj1->type) {
-	case OBJ_STRING: return compare_strings((StringObj*) obj1, (StringObj*) obj2);
+	case OBJ_STRING: return compare_strings((StringObj*) obj1, (StringObj*) obj2); // == between strings returns if the value of the strings is equal
+        default:return obj1 == obj2; // == between other objects will be true only if their memory addresses are the same.
 	}
 }
 // <------------------------------------>
 
 static char* copy_string(const char* value, int length) {
-	char* str_value = (char*)malloc(length + 1);
-	if (str_value == NULL) {
-		printf("[ERROR] cannot allocate string. exiting...\n");
-		exit(1);
-	}
-	memcpy(str_value, value, length);
-	str_value[length] = '\0';
-	return str_value;
-}	
-
-static Obj* allocate_object(ObjType type) {
-	Obj* object = (Obj*)malloc(sizeof(Obj));
-	if (object == NULL) {
-		printf("[ERROR] cannot allocate object. exiting...\n");
-		exit(1);
-	}
-    object->isMarked = false;
-    object->next = NULL;
-	object->type = type;
-	return object;
+    char *str_value = (char *) malloc(length + 1);
+    if (str_value == NULL) {
+        printf("[ERROR] cannot allocate string. exiting...\n");
+        exit(1);
+    }
+    memcpy(str_value, value, length);
+    str_value[length] = '\0';
+    return str_value;
 }
 
 StringObj* create_string_obj(const char* value, int length) {
-	// create the required arguements
+	// create the required arguments
 	char* string_value = copy_string(value, length);
-	Obj* object = allocate_object(OBJ_STRING);
-	StringObj* str_obj = (StringObj*)malloc(sizeof(StringObj));
+	StringObj* str_obj = ALLOCATE_OBJECT(StringObj, OBJ_STRING);
 	if (str_obj == NULL) {
 		printf("[ERROR] couldn't allocate string object");
 		exit(1);
@@ -93,7 +92,6 @@ StringObj* create_string_obj(const char* value, int length) {
 
 	// set the values
 	str_obj->value = string_value;
-	str_obj->obj = *object;
 	str_obj->length = length;
 
 	return str_obj;
@@ -101,23 +99,21 @@ StringObj* create_string_obj(const char* value, int length) {
 
 ErrorObj* create_err_obj(const char* value, int length, ErrorType type) {
     StringObj* name = create_string_obj(value, length);
-    Obj* object = allocate_object(OBJ_ERROR);
-    ErrorObj* err_obj = (ErrorObj*) malloc(sizeof(ErrorObj));
+    ErrorObj* err_obj = ALLOCATE_OBJECT(ErrorObj, OBJ_ERROR);
     if (err_obj == NULL) {
         printf("[ERROR] couldn't allocate error object");
         exit(1);
     }
-    err_obj->obj = *object;
     err_obj->value = name;
     err_obj->type = type;
     return err_obj;
 }
 
+
 FunctionObj* create_func_obj(const char* value, int length, FunctionType type) {
-	// create the required arguements
+	// create the required arguments
 	StringObj* name = create_string_obj(value, length);
-	Obj* object = allocate_object(OBJ_FUNCTION);
-	FunctionObj* func_obj = (FunctionObj*)malloc(sizeof(FunctionObj));
+	FunctionObj* func_obj = ALLOCATE_OBJECT(FunctionObj, OBJ_FUNCTION);
 	if (func_obj == NULL) {
 		printf("[ERROR] couldn't allocate string object");
 		exit(1);
@@ -125,7 +121,6 @@ FunctionObj* create_func_obj(const char* value, int length, FunctionType type) {
 
 	// set the values
 	func_obj->name = name;
-	func_obj->obj = *object;
     func_obj->type = type;
 
 	Chunk body;
@@ -134,6 +129,11 @@ FunctionObj* create_func_obj(const char* value, int length, FunctionType type) {
 
 
 	return func_obj;
+}
+NativeFuncObj* create_native_func_obj(NativeFn function) {
+    NativeFuncObj* func_obj = ALLOCATE_OBJECT(NativeFuncObj, OBJ_NATIVE);
+    func_obj->function = function;
+    return func_obj;
 }
 
 
@@ -150,15 +150,13 @@ StringObj* concat_strings(const char* value1, int length1, const char* value2, i
 	memcpy(string_value + length1, value2, length2);
 	string_value[length1 + length2] = '\0';
 
-	Obj* object = allocate_object(OBJ_STRING);
-	StringObj* str_obj = (StringObj*)malloc(sizeof(StringObj));
+	StringObj* str_obj = ALLOCATE_OBJECT(StringObj, OBJ_STRING);
 	if (str_obj == NULL) {
 		printf("[ERROR] couldn't allocate string object");
 		exit(1);
 	}
 
 	str_obj->value = string_value;
-	str_obj->obj = *object;
 	str_obj->length = length1 + length2;
 
 	return str_obj;

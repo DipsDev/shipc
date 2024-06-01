@@ -15,6 +15,7 @@ typedef enum {
 typedef enum {
 	OBJ_STRING,
 	OBJ_FUNCTION,
+    OBJ_NATIVE,
     OBJ_ERROR
 } ObjType;
 
