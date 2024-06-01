@@ -23,5 +23,6 @@ void mark_object(Obj* obj);
 
 void collect_garbage(VM* vm);
 void add_garbage(VM* vm, Value value);
+void collect_all_garbage(VM* vm) ;
 
 #endif // SHIP_MEMORY_H_

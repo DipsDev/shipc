@@ -86,6 +86,7 @@ void init_vm(VM* vm) {
 }
 
 void free_vm(VM* vm) {
+    collect_all_garbage(vm);
 }
 
 InterpretResult interpret(VM* vm, FunctionObj* main_script) {
