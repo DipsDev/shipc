@@ -96,7 +96,6 @@ void add_garbage(VM* vm, Value value) {
 }
 
 void collect_all_garbage(VM* vm) {
-    mark_variables(vm);
     sweep(vm);
 }
 
@@ -104,6 +103,7 @@ void collect_garbage(VM* vm) {
     // don't gc if the capacity isn't overflowing
     if (vm->heapObjects + 1 < vm->heapCapacity) return;
     // mark and sweep
+    mark_variables(vm);
     collect_all_garbage(vm);
     // bop the capacity to reduce collection
     vm->heapCapacity *= 2;
