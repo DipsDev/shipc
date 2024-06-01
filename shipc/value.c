@@ -49,7 +49,7 @@ static void print_object(Value obj_val) {
             }
 
         }
-        printf("%.*s", str_obj->length, str_obj->value);
+        fputs(str_obj->value, stdout);
         break;
     }
         case OBJ_FUNCTION: {
@@ -57,7 +57,8 @@ static void print_object(Value obj_val) {
             printf("<function %.*s at %p>", func->name->length, func->name->value, func);
             break;
         }
-        case OBJ_ERROR:
+        default:
+            printf("this would print a great things (if someone made a print case for it)");
             break;
     }
 }
