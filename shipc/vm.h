@@ -20,6 +20,19 @@ typedef enum {
 } InterpretResult;
 
 typedef struct {
+    char* name;
+    int length;
+    Value val;
+    struct ObjGlobal* next;
+} ObjGlobal;
+
+typedef struct {
+    int count;
+    int capacity;
+    ObjGlobal** globals;
+} VmGlobals;
+
+typedef struct {
     FunctionObj* function;
     uint8_t* ip;
 } StackFrame;
@@ -36,6 +49,8 @@ typedef struct {
     struct Obj *objects;
     int heapObjects;
     int heapCapacity;
+
+    VmGlobals globals;
 
 } VM;
 
