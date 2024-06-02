@@ -104,8 +104,8 @@ What a blast!
 Consider the following python code:
 ```python
 def a():
-    x = 100_000_000 # 1e08
-    while x != 0:
+    x = 0
+    while x <= 1_000_000_000:
         x = x - 1
 a()
 ```
@@ -113,8 +113,8 @@ a()
 And it's .ship version:
 ```rust
 fn a() {
-    var x = 100000000;
-    while x != 0 {
+    var x = 0;
+    while x <= 1_000_000_000 {
         x = x - 1;
     }
 }
@@ -122,6 +122,6 @@ a();
 ```
 
 ##### Results
-This python code, took about 3.5 seconds to run.\
-My ship code, took about 3.1 seconds to run. (Without a GC);
+This python code, took about 32.3 seconds to run.\
+My ship code, took about 28.8 seconds to run. 
 
