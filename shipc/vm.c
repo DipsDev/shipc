@@ -73,105 +73,7 @@ static InterpretResult runtime_error(VM* vm, const char* message, ErrorType type
 }
 
 
-void create_global_map(VmGlobals * mp) {
-    mp->capacity = 8;
-    mp->count = 0;
-    mp->globals = calloc(mp->capacity, sizeof(ObjGlobal *));
-}
-static unsigned hash_function(char* name, int length) {
-    unsigned hash = 2166136261;
-    int i = 0;
-    while (i < length) {
-        hash = hash ^ name[i];
-        hash = hash * 16777619;
-        i++;
-    }
-    return hash; // & (capacity - 1); calculate the modulo of the capacity
-}
-static ObjGlobal * create_global_obj(char* name, int len, Value val) {
-    ObjGlobal * node = (ObjGlobal *) malloc(sizeof(ObjGlobal));
-    if (node == NULL) {
-        printf("Failed to allocate node");
-        exit(1);
-    }
-    node->name = name;
-    node->length = len;
-    node->val = val;
-    node->next = NULL;
-    return node;
-}
-static void put_global_obj_t(char* name, int name_len, int capacity, ObjGlobal** arr, ObjGlobal * nd) {
-    unsigned index = hash_function(name, name_len) & (capacity - 1);
-    if (arr[index] == NULL) {
-        arr[index] = (struct ObjGlobal *) nd;
-        return;
-    }
-    // move to the end of the linked list
-    ObjGlobal *pos = (ObjGlobal *) arr[index];
-    while (pos->next != NULL) {
-        pos = (ObjGlobal *) pos->next;
-    }
-    pos->next = (struct ObjGlobal *) nd;
-}
 
-static void resize_map(VmGlobals *map) {
-    // create new capacity
-    int new_capacity = GROW_CAPACITY(map->capacity);
-    ObjGlobal ** temp_ = (ObjGlobal **) calloc(new_capacity, sizeof(ObjGlobal *));
-
-    // recalculate the values
-    for (unsigned int i = 0; i < map->capacity; i++) {
-        if (map->globals[i] == NULL) {
-            continue;
-        }
-        ObjGlobal * pos = map->globals[i];
-        while (pos != NULL) {
-            put_global_obj_t(pos->name, pos->length, new_capacity, temp_, pos);
-            pos = (ObjGlobal *) pos->next;
-        }
-    }
-
-    // free and assign the new array
-    free(map->globals);
-    map->globals = temp_;
-
-}
-
-
-void put_global_obj(VmGlobals * map,char* name,int name_len, Value val) {
-    ObjGlobal * nd = create_global_obj(name, name_len, val);
-    if ((double)map->count / map->capacity >= 0.75) {
-        resize_map((VmGlobals *) map);
-    }
-    put_global_obj_t(name, name_len, map->capacity, map->globals, nd);
-}
-
-ObjGlobal * get_global(VmGlobals * map, char* name, int name_len) {
-    unsigned index = hash_function(name, name_len) & (map->capacity - 1); // calculate the index
-    ObjGlobal * pos = map->globals[index];
-    while (pos != NULL && strncmp(name, pos->name, pos->length) != 0) {
-        pos = (ObjGlobal *) pos->next;
-    }
-    return pos;
-}
-
-void free_globals(VmGlobals * map) {
-    // free each bucket, and then free the entire map
-    for (unsigned int i = 0; i < map->capacity; i++) {
-        if (map->globals[i] == NULL) {
-            continue;
-        }
-        ObjGlobal * pos = (ObjGlobal *) map->globals[i];
-        while (pos != NULL) {
-            ObjGlobal * before = (ObjGlobal *) pos->next;
-            if (IS_OBJ(before->val)) {
-                free_object(AS_OBJ(before->val));
-            }
-            pos = before;
-        }
-    }
-    free(map->globals);
-}
 
 Value native_time(int arg_count, Value* args) {
     return VAR_NUMBER((double) clock() / CLOCKS_PER_SEC);
@@ -188,12 +90,12 @@ void init_vm(VM* vm) {
     vm->heapObjects = 0;
     vm->heapCapacity = 8;
 
-    VmGlobals globals;
-    create_global_map(&globals);
+    ValueTable globals;
+    create_value_map(&globals);
     vm->globals = globals;
 
     NativeFuncObj * fn = create_native_func_obj(native_time);
-    put_global_obj(&vm->globals, "time", 4, VAR_OBJ(fn));
+    put_value_node(&vm->globals, "time", 4, VAR_OBJ(fn));
 
 }
 
@@ -476,7 +378,7 @@ static InterpretResult run(VM* vm) {
                         }
                     }
                 }
-                ObjGlobal* glob = get_global(&vm->globals, var_str->value, var_str->length);
+                ValueNode * glob = get_global(&vm->globals, var_str->value, var_str->length);
                 if (glob != NULL) {
                     push(vm, glob->val);
                     goto var_found;

@@ -19,18 +19,7 @@ typedef enum {
     RESULT_ERROR
 } InterpretResult;
 
-typedef struct {
-    char* name;
-    int length;
-    Value val;
-    struct ObjGlobal* next;
-} ObjGlobal;
 
-typedef struct {
-    int count;
-    int capacity;
-    ObjGlobal** globals;
-} VmGlobals;
 
 typedef struct {
     FunctionObj* function;
@@ -50,7 +39,7 @@ typedef struct {
     int heapObjects;
     int heapCapacity;
 
-    VmGlobals globals;
+    ValueTable globals;
 
 } VM;
 

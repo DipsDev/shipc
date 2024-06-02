@@ -111,3 +111,93 @@ void free_hash_map(HashMap* map) {
 }
 
 
+void create_value_map(ValueTable * mp) {
+    mp->capacity = 8;
+    mp->count = 0;
+    mp->arr = calloc(mp->capacity, sizeof(ValueNode *));
+}
+
+ValueNode * create_value_node(char* name, int len, Value val) {
+    ValueNode * node = (ValueNode *) malloc(sizeof(ValueNode));
+    if (node == NULL) {
+        printf("Failed to allocate node");
+        exit(1);
+    }
+    node->name = name;
+    node->length = len;
+    node->val = val;
+    node->next = NULL;
+    return node;
+}
+static void put_value_node_t(char* name, int name_len, int capacity, ValueNode ** arr, ValueNode * nd) {
+    unsigned index = hash_function(name, name_len) & (capacity - 1);
+    if (arr[index] == NULL) {
+        arr[index] = (ValueNode *) nd;
+        return;
+    }
+    // move to the end of the linked list
+    ValueNode *pos = (ValueNode *) arr[index];
+    while (pos->next != NULL) {
+        pos = (ValueNode *) pos->next;
+    }
+    pos->next = (struct ValueNode *) nd;
+}
+
+static void resize_value_table(ValueTable *map) {
+    // create new capacity
+    int new_capacity = GROW_CAPACITY(map->capacity);
+    ValueNode ** temp_ = (ValueNode **) calloc(new_capacity, sizeof(ValueNode *));
+
+    // recalculate the values
+    for (unsigned int i = 0; i < map->capacity; i++) {
+        if (map->arr[i] == NULL) {
+            continue;
+        }
+        ValueNode * pos = map->arr[i];
+        while (pos != NULL) {
+            put_value_node_t(pos->name, pos->length, new_capacity, temp_, pos);
+            pos = (ValueNode *) pos->next;
+        }
+    }
+
+    // free and assign the new array
+    free(map->arr);
+    map->arr = temp_;
+
+}
+
+
+void put_value_node(ValueTable * map,char* name,int name_len, Value val) {
+    ValueNode * nd = create_value_node(name, name_len, val);
+    if ((double)map->count / map->capacity >= 0.75) {
+        resize_value_table((ValueTable *) map);
+    }
+    put_value_node_t(name, name_len, map->capacity, map->arr, nd);
+}
+
+ValueNode * get_global(ValueTable * map, char* name, int name_len) {
+    unsigned index = hash_function(name, name_len) & (map->capacity - 1); // calculate the index
+    ValueNode * pos = map->arr[index];
+    while (pos != NULL && strncmp(name, pos->name, pos->length) != 0) {
+        pos = (ValueNode *) pos->next;
+    }
+    return pos;
+}
+
+void free_globals(ValueTable * map) {
+    // free each bucket, and then free the entire map
+    for (unsigned int i = 0; i < map->capacity; i++) {
+        if (map->arr[i] == NULL) {
+            continue;
+        }
+        ValueNode * pos = (ValueNode *) map->arr[i];
+        while (pos != NULL) {
+            ValueNode * before = (ValueNode *) pos->next;
+            if (IS_OBJ(before->val)) {
+                free_object(AS_OBJ(before->val));
+            }
+            pos = before;
+        }
+    }
+    free(map->arr);
+}
