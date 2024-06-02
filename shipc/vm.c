@@ -86,7 +86,16 @@ void init_vm(VM* vm) {
 }
 
 void free_vm(VM* vm) {
-    collect_all_garbage(vm);
+    // Free all the gc objects
+    Obj* pos = (Obj *) vm->objects;
+    while (pos != NULL) {
+        Obj* next = (Obj *) pos->next;
+        free_object(pos);
+        pos = next;
+    }
+
+    // Free the last stackframe
+    free_stack_frame(vm->callStack[0]);
 }
 
 InterpretResult interpret(VM* vm, FunctionObj* main_script) {
