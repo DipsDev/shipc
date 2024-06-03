@@ -116,6 +116,12 @@ static TokenType identifier_type(Scanner* scanner) {
 				switch (scanner->start[1]) {
 				case 'a': return reserved_keywords(scanner, 4, "alse", TOKEN_FALSE);
 				case 'n': return reserved_keywords(scanner, 1, "n", TOKEN_FN);
+                case 'o': {
+                    if (scanner->current - scanner->start == 3) {
+                        return reserved_keywords(scanner, 2, "or", TOKEN_FOR);
+                    }
+                    return reserved_keywords(scanner, 6, "oreach", TOKEN_FOREACH);
+                }
 				default: return TOKEN_IDENTIFIER;
 				}
 			}
@@ -177,7 +183,8 @@ static Token scan_token(Scanner *scanner) {
 		case '*': return create_token(scanner, TOKEN_STAR);
     case '%': return create_token(scanner, TOKEN_MODULO);
 		case '/': return create_token(scanner, TOKEN_SLASH); 
-		case '-': return create_token(scanner, TOKEN_MINUS); 
+		case '-': return create_token(scanner, TOKEN_MINUS);
+        case '|': return create_token(scanner, TOKEN_VERTICAL_BAR);
 		case '{': return create_token(scanner, TOKEN_LEFT_BRACE);
 		case '}': return create_token(scanner, TOKEN_RIGHT_BRACE); 
 		case '(': return create_token(scanner, TOKEN_LEFT_PAREN); 

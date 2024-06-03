@@ -538,6 +538,27 @@ static void parse_global_statement(Parser* parser, Scanner* scanner) {
 
 }
 
+static void parse_foreach_statement(Parser* parser, Scanner* scanner) {
+    // foreach str |char| {
+    //  print(char);
+    //}
+    //
+    parse_expression(parser, scanner); // parse the str(iterable)
+    expect(scanner, parser, TOKEN_VERTICAL_BAR, "expected | after foreach identifier");
+    expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier inside vertical bars");
+
+    // do something with the identifier probably
+
+    expect(scanner, parser, TOKEN_VERTICAL_BAR, "unclosed | in foreach");
+    expect(scanner, parser, TOKEN_LEFT_BRACE, "Expected { after if expression"); // expect open block after boolean expression
+    while (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
+        // parse the body of the if statement
+        parse_statement(parser, scanner);
+    }
+    // expect user closing if body
+    expect(scanner, parser, TOKEN_RIGHT_BRACE, "Expected } after open block");
+}
+
 static void parse_while_statement(Parser* parser, Scanner* scanner) {
     // save the before bool expr
     int before_bool = current_chunk(parser)->count;
@@ -601,6 +622,7 @@ static void parse_statement(Parser* parser, Scanner* scanner) {
         case TOKEN_FOR:
         case TOKEN_IF:
         case TOKEN_FN:
+        case TOKEN_FOREACH:
         case TOKEN_WHILE:
             return parse_control_statement(parser, scanner);
         case TOKEN_VAR:
@@ -659,6 +681,8 @@ ParseRule rules[] = {
   [TOKEN_FALSE] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_FN] = {parse_func_statement, NULL, PREC_NONE},
   [TOKEN_FOR] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_FOREACH] = {parse_foreach_statement,     NULL,   PREC_NONE},
+  [TOKEN_VERTICAL_BAR] = {NULL, NULL, PREC_NONE},
   [TOKEN_IF] = {parse_if_statement,     NULL,   PREC_NONE},
   [TOKEN_NIL] = {parse_literal,     NULL,   PREC_NONE},
   [TOKEN_PRINT] = {parse_debug_statement,     NULL,   PREC_NONE},
