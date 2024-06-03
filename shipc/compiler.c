@@ -576,9 +576,10 @@ static void parse_foreach_statement(Parser* parser, Scanner* scanner) {
     write_bytes(current_chunk(parser), (body_size >> 8) & 0xff, body_size & 0xff, scanner->line);
 
     // Set the jump over the for jmp
-    int jmp_over_size = body_size;
+    int jmp_over_size = body_size - 3;
     current_chunk(parser)->codes[jmp_to + 1] =(jmp_over_size >> 8) & 0xff;
     current_chunk(parser)->codes[jmp_to + 2] = jmp_over_size & 0xff;
+    write_chunk(current_chunk(parser), OP_END_FOR, scanner->line);
 }
 
 static void parse_while_statement(Parser* parser, Scanner* scanner) {

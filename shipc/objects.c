@@ -75,6 +75,26 @@ bool compare_objects(Obj* obj1, Obj* obj2) {
         default:return obj1 == obj2; // == between other objects will be true only if their memory addresses are the same.
 	}
 }
+bool iterable_out_of_bounds(IterableObj * iterable) {
+    switch (iterable->iterable->type) {
+        case OBJ_STRING: {
+            StringObj* temp_obj = (StringObj*) iterable->iterable;
+            return temp_obj->length <= iterable->index;
+
+        } default: return true; // Add more as the vm gets bigger
+
+    }
+}
+Value iterable_get_at(IterableObj* iterable, int index) {
+    switch(iterable->iterable->type) {
+        case OBJ_STRING: {
+            StringObj* string_obj = (StringObj*) iterable->iterable;
+            StringObj* val_obj = create_string_obj(string_obj->value + index, 1);
+            return VAR_OBJ(val_obj);
+        }
+        default: return VAR_NIL;
+    }
+}
 // <------------------------------------>
 
 static char* copy_string(const char* value, int length) {

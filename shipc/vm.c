@@ -227,7 +227,6 @@ static InterpretResult run(VM* vm) {
 					StringObj* str_a = AS_STRING(a);
 					StringObj* str_b = AS_STRING(b);
 
-                    collect_garbage(vm);
 					StringObj* concat = concat_strings(str_a->value, str_a->length, str_b->value, str_b->length);
                     add_garbage(vm, VAR_OBJ(concat));
 
@@ -387,6 +386,37 @@ static InterpretResult run(VM* vm) {
                 var_found:
                     break;
 			}
+            case OP_GET_ITER: {
+                Value to_get_iter = pop(vm);
+                if (!IS_STRING(to_get_iter)) { // Add more values as the vm progresse
+                    return runtime_error(vm, "value is not iterable", ERR_TYPE);
+                }
+                IterableObj* iter_obj = get_iterable(AS_OBJ(to_get_iter));
+                push(vm, VAR_OBJ(iter_obj));
+                break;
+            }
+            case OP_END_FOR: {
+                Value iter_obj = pop(vm);
+                add_garbage(vm, iter_obj);
+                break;
+            }
+            case OP_FOR_ITER: {
+                Value val = peek_behind(vm, 1);
+                if (!IS_ITERABLE(val)) {
+                    return runtime_error(vm, "expected iterable", ERR_TYPE);
+                }
+                IterableObj* iter_obj = AS_ITERABLE(val);
+                if (iterable_out_of_bounds(iter_obj)) {
+                    frame->ip += READ_SHORT();
+                    break;
+                }
+                READ_SHORT();
+                Value iterable_var_value = iterable_get_at(iter_obj, iter_obj->index);
+                iter_obj->index++;
+                add_garbage(vm, iterable_var_value);
+                push(vm, iterable_var_value);
+                break;
+            }
 			case OP_CALL: {
                 uint8_t arg_count = READ_BYTE();
                 Value func_value = peek_behind(vm, arg_count + 1);

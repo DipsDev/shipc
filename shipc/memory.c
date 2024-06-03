@@ -85,6 +85,7 @@ static void sweep(VM* vm) {
 
 void add_garbage(VM* vm, Value value) {
     if (!IS_OBJ(value)) return;
+    collect_garbage(vm);
     Obj *const_obj = AS_OBJ(value);
     // append the new obj to the head of the list
     Obj **head = (Obj **) &vm->objects;
