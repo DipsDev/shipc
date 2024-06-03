@@ -36,10 +36,28 @@ while x > 3 {
     ...
 }
 ```
-Unfortunately, for loops are not supported in ship yet. but this is a planned feature.
+
+Foreach loops are a different things,\
+ship supports the following syntax similar to how for loop works in python.\
+the following ship code equals to the following python code:\
+`main.ship`
+```ruby
+var best_lang = "ship";
+foreach best_lang |char| {
+    print(char);
+}
+```
+`main.py`
+```python
+best_lang = "ship"
+for char in best_lang:
+    print(char)
+```
+
+
 
 ### Conditionals
-Ship uses a go like syntax, in order to create if statements.
+Ship uses a go like syntax in order to create if statements.
 ```javascript
 var a = 15;
 if a >= 3 {
