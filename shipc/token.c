@@ -182,7 +182,16 @@ static Token scan_token(Scanner *scanner) {
 		case '+': return create_token(scanner, TOKEN_PLUS);
 		case '*': return create_token(scanner, TOKEN_STAR);
     case '%': return create_token(scanner, TOKEN_MODULO);
-		case '/': return create_token(scanner, TOKEN_SLASH); 
+		case '/': {
+            if (!match(scanner, '/')) {
+                return create_token(scanner, TOKEN_SLASH);
+            }
+            while (peek(scanner) != '\n') {
+                advance(scanner);
+            }
+            advance(scanner); // eat the \n
+            return scan_token(scanner);
+        }
 		case '-': return create_token(scanner, TOKEN_MINUS);
         case '|': return create_token(scanner, TOKEN_VERTICAL_BAR);
 		case '{': return create_token(scanner, TOKEN_LEFT_BRACE);
