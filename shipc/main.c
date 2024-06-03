@@ -41,7 +41,9 @@ void run_code() {
     if (compiled_func == NULL) {
         exit(1);
     }
+#ifdef SHIP_DEBUG
     disassemble_func(compiled_func);
+#endif
 
     VM vm;
     init_vm(&vm);
