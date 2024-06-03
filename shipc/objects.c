@@ -38,11 +38,18 @@ static void free_error(Obj* err_obj) {
 
 }
 
+static void free_iterable(Obj* iter_obj) {
+    IterableObj* obj = (IterableObj*) iter_obj;
+    free_object(obj->iterable);
+    free(obj);
+}
+
 void free_object(Obj* obj) {
 	switch (obj->type) {
 	case OBJ_STRING: return free_string(obj);
 	case OBJ_FUNCTION: return free_function(obj);
     case OBJ_ERROR: return free_error(obj);
+    case OBJ_ITERABLE: return free_iterable(obj);
 	default: printf("[ERROR] cannot free object, it is not yet supported. got object %d", obj->type); // unreachable
 	}
 }
@@ -134,6 +141,13 @@ NativeFuncObj* create_native_func_obj(NativeFn function) {
     NativeFuncObj* func_obj = ALLOCATE_OBJECT(NativeFuncObj, OBJ_NATIVE);
     func_obj->function = function;
     return func_obj;
+}
+
+IterableObj* get_iterable(Obj* iterable) {
+    IterableObj* iter_obj = ALLOCATE_OBJECT(IterableObj, OBJ_ITERABLE);
+    iter_obj->index = 0;
+    iter_obj->iterable = iterable;
+    return iter_obj;
 }
 
 

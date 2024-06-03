@@ -23,6 +23,8 @@ typedef enum { // available op codes
     OP_ASSIGN_LOCAL,
     OP_JUMP_BACKWARD,
     OP_JUMP,
+    OP_GET_ITER,
+    OP_FOR_ITER,
 	OP_DIV,
     OP_RETURN,
 	OP_SHOW_TOP,

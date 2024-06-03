@@ -54,6 +54,12 @@ typedef struct {
     ErrorType type;
 
 } ErrorObj;
+
+typedef struct {
+    Obj obj;
+    Obj* iterable;
+    int index;
+} IterableObj;
 ///
 
 
