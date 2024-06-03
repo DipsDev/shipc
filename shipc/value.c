@@ -13,6 +13,9 @@ bool is_truthy(Value val) {
 	if (IS_BOOL(val)) {
 		return AS_BOOL(val);
 	}
+    if (IS_STRING(val)) {
+        return AS_STRING(val)->length != 0;
+    }
 	return false;
 }
 
