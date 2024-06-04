@@ -37,7 +37,7 @@ while x > 3 {
 }
 ```
 
-Foreach loops are a different things,\
+Foreach loops are a different thing,\
 ship supports the following syntax similar to how for loop works in python.\
 the following ship code equals to the following python code:\
 `main.ship`
@@ -62,6 +62,15 @@ Ship uses a go like syntax in order to create if statements.
 var a = 15;
 if a >= 3 {
     ...
+}
+```
+
+### Arrays
+Arrays are a new feature in ship. they work like any other language.
+```rust
+var classes = ["Biology", "Math", "Music", "English"];
+foreach classes |class| {
+    print(class);
 }
 ```
 
