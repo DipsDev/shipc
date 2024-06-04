@@ -47,7 +47,10 @@ static void free_error(Obj* err_obj) {
 
 static void free_iterable(Obj* iter_obj) {
     IterableObj* obj = (IterableObj*) iter_obj;
-    free_object(obj->iterable);
+
+    // Don't free the iterable object, the object is not a copy of the original. therefore, it can still be marked.
+    // free_object(obj->iterable);
+
     free(obj);
 }
 
@@ -89,7 +92,11 @@ bool iterable_out_of_bounds(IterableObj * iterable) {
             StringObj* temp_obj = (StringObj*) iterable->iterable;
             return temp_obj->length <= iterable->index;
 
-        } default: return true; // Add more as the vm gets bigger
+        } case OBJ_ARRAY: {
+                ArrayObj* temp_obj = (ArrayObj* )iterable->iterable;
+                return iterable->index >= temp_obj->values->count;
+        }
+        default: return true; // Add more as the vm gets bigger
 
     }
 }
@@ -99,6 +106,10 @@ Value iterable_get_at(IterableObj* iterable, int index) {
             StringObj* string_obj = (StringObj*) iterable->iterable;
             StringObj* val_obj = create_string_obj(string_obj->value + index, 1);
             return VAR_OBJ(val_obj);
+        }
+        case OBJ_ARRAY: {
+            ArrayObj* arr_obj = (ArrayObj*) iterable->iterable;
+            return arr_obj->values->arr[index];
         }
         default: return VAR_NIL;
     }

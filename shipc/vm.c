@@ -337,13 +337,13 @@ static InterpretResult run(VM* vm) {
 
                 ArrayObj* arr = create_array_obj();
 
-                for(;arg_count > 0; arg_count--) {
-                    write_value_array(arr->values, vm->sp[-arg_count]);
+                for(uint8_t i = arg_count; i > 0; i--) {
+                    write_value_array(arr->values, vm->sp[-i]);
                 }
                 vm->sp -= arg_count;
 
                 push(vm, VAR_OBJ(arr));
-                add_garbage(vm, VAR_OBJ(arr));
+                // add_garbage(vm, VAR_OBJ(arr));
                 break;
             }
 			case OP_ASSIGN_GLOBAL: {
@@ -406,7 +406,7 @@ static InterpretResult run(VM* vm) {
 			}
             case OP_GET_ITER: {
                 Value to_get_iter = pop(vm);
-                if (!IS_STRING(to_get_iter)) { // Add more values as the vm progresse
+                if (!IS_STRING(to_get_iter) && !IS_ARRAY(to_get_iter)) { // Add more values as the vm progresse
                     return runtime_error(vm, "value is not iterable", ERR_TYPE);
                 }
                 IterableObj* iter_obj = get_iterable(AS_OBJ(to_get_iter));
