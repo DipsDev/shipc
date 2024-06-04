@@ -17,7 +17,6 @@ typedef struct {
 
 	FunctionObj* func;
     HashMap* varMap;
-    unsigned int varCount;
 
 	bool hadError;
 	bool panicMode;
@@ -36,11 +35,10 @@ static unsigned int create_variable(Parser* parser, char* name, int length) {
     local.name = name;
     local.value = VAR_NIL;
     local.length = length;
-    parser->func->locals[parser->varCount] = local;
+    parser->func->locals[parser->varMap->count] = local;
 
-    put_node(parser->varMap, name, length, parser->varCount);
-    parser->varCount++;
-    return parser->varCount - 1;
+    put_node(parser->varMap, name, length, parser->varMap->count);
+    return parser->varMap->count - 1;
 
 }
 
@@ -147,7 +145,6 @@ static void init_parser(Parser* parser) {
 	parser->hadError = false;
 	parser->panicMode = false;
 
-    parser->varCount = 0;
     parser->varMap = (HashMap*) malloc(sizeof (HashMap));
     create_variable_map(parser->varMap);
 
@@ -471,7 +468,6 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 
     // set the variable scope
     HashMap* saved_map = parser->varMap;
-    unsigned int saved_count = parser->varCount;
 
     parser->varMap = (HashMap*) malloc(sizeof (HashMap));
     create_variable_map(parser->varMap);
@@ -504,8 +500,7 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
     write_bytes(current_chunk(parser), OP_NIL, OP_RETURN, scanner->line);
 
     free_hash_map(parser->varMap);
-    parser->func->localCount = parser->varCount;
-    parser->varCount = saved_count;
+    parser->func->localCount = parser->varMap->count;
     parser->varMap = saved_map;
 	parser->func = before_func;
 	expect(scanner, parser, TOKEN_RIGHT_BRACE, "Unclosed block in function declaration"); // eat the }
@@ -668,7 +663,7 @@ static void end_compile(Parser* parser, Scanner* scanner) {
 	if (parser->current.type == TOKEN_EOF) {
 		write_chunk(current_chunk(parser), OP_HALT, scanner->line);
 
-        parser->func->localCount = parser->varCount;
+        parser->func->localCount = parser->varMap->count;
         free_hash_map(parser->varMap);
 
 		return;

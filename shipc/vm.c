@@ -110,6 +110,9 @@ void free_vm(VM* vm) {
 
     // Free the last stackframe
     free_stack_frame(vm->callStack[0]);
+
+    // Free the globals
+    free_globals(&vm->globals);
 }
 
 InterpretResult interpret(VM* vm, FunctionObj* main_script) {
@@ -423,8 +426,8 @@ static InterpretResult run(VM* vm) {
 
                 if (IS_NATIVE(func_value)) {
                     NativeFuncObj* native_obj = (NativeFuncObj*) AS_OBJ(func_value);
-                    Value return_value = native_obj->function(arg_count, vm->sp - arg_count - 1);
-                    vm->sp -= arg_count;
+                    Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
+                    vm->sp -= arg_count - 1;
                     push(vm, return_value);
                     break;
                 }

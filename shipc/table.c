@@ -15,7 +15,7 @@ void create_variable_map(HashMap* mp) {
     mp->arr = calloc(mp->capacity, sizeof(HashNode*));
 }
 
-static unsigned hash_function(char* name, int length) {
+static unsigned hash_function(const char* name, int length) {
 	unsigned hash = 2166136261;
 	int i = 0;
 	while (i < length) {
@@ -65,7 +65,7 @@ static void resize_map(HashMap* map) {
 		}
 		HashNode* pos = map->arr[i];
 		while (pos != NULL) {
-			put_node_t(pos->name, strlen(pos->name), new_capacity, temp_, pos);
+			put_node_t(pos->name, pos->len, new_capacity, temp_, pos);
 			pos = (HashNode *) pos->next;
 		}
 	}
@@ -81,6 +81,7 @@ void put_node(HashMap* map,char* name,int name_len, unsigned int val) {
 	if ((double)map->count / map->capacity >= 0.75) {
 		resize_map(map);
 	}
+    map->count++;
 	put_node_t(name, name_len, map->capacity, map->arr, nd);
 }
 
@@ -94,19 +95,7 @@ HashNode* get_node(HashMap* map, char* name, int name_len) {
 }
 
 void free_hash_map(HashMap* map) {
-	// free each bucket, and then free the entire map
-	for (unsigned int i = 0; i < map->capacity; i++) {
-		if (map->arr[i] == NULL) {
-			continue;
-		}
-		HashNode* pos = map->arr[i];
-		while (pos != NULL) {
-			HashNode* before = (HashNode *) pos->next;
-			free(pos);
-			pos = before;
-		}
-	}
-    free(map->arr);
+    free(map->arr); // Free the array directly, as the char* is right from the source code.
 	free(map);
 }
 
@@ -172,6 +161,7 @@ void put_value_node(ValueTable * map,char* name,int name_len, Value val) {
     if ((double)map->count / map->capacity >= 0.75) {
         resize_value_table((ValueTable *) map);
     }
+    map->count++;
     put_value_node_t(name, name_len, map->capacity, map->arr, nd);
 }
 
@@ -193,9 +183,11 @@ void free_globals(ValueTable * map) {
         ValueNode * pos = (ValueNode *) map->arr[i];
         while (pos != NULL) {
             ValueNode * before = (ValueNode *) pos->next;
-            if (IS_OBJ(before->val)) {
-                free_object(AS_OBJ(before->val));
+            if (IS_OBJ(pos->val) && !IS_NATIVE(pos->val)) { // Don't free the native functions.
+                free_object(AS_OBJ(pos->val));
+                free(pos->name);
             }
+            free(pos);
             pos = before;
         }
     }
