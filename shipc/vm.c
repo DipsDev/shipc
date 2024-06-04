@@ -331,6 +331,21 @@ static InterpretResult run(VM* vm) {
                 frame->function->locals[variable_index].value = var_value;
 				break;
 			}
+            case OP_BUILD_ARRAY: {
+                // Read the argument count
+                uint8_t arg_count = READ_BYTE();
+
+                ArrayObj* arr = create_array_obj();
+
+                for(;arg_count > 0; arg_count--) {
+                    write_value_array(arr->values, vm->sp[-arg_count]);
+                }
+                vm->sp -= arg_count;
+
+                push(vm, VAR_OBJ(arr));
+                add_garbage(vm, VAR_OBJ(arr));
+                break;
+            }
 			case OP_ASSIGN_GLOBAL: {
                 Value  var_name = READ_CONSTANT();
                 if (!IS_STRING(var_name)) {

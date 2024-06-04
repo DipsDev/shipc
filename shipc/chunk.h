@@ -26,6 +26,7 @@ typedef enum { // available op codes
     OP_GET_ITER,
     OP_FOR_ITER,
     OP_END_FOR,
+    OP_BUILD_ARRAY,
 	OP_DIV,
     OP_RETURN,
 	OP_SHOW_TOP,

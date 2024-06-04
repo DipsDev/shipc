@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "objects.h"
+#include "value.h"
 
 static Obj* allocate_object(size_t size, ObjType type) {
     Obj* c_obj = (Obj*) malloc(size);
@@ -30,6 +31,12 @@ static void free_function(Obj* func_obj) {
 
 }
 
+static void free_array(Obj* arr_obj) {
+    ArrayObj* obj = (ArrayObj*) arr_obj;
+    free_value_array(obj->values);
+    free(arr_obj);
+}
+
 static void free_error(Obj* err_obj) {
     ErrorObj* obj = (ErrorObj*) err_obj;
     free_string((Obj *) obj->value);
@@ -50,6 +57,7 @@ void free_object(Obj* obj) {
 	case OBJ_FUNCTION: return free_function(obj);
     case OBJ_ERROR: return free_error(obj);
     case OBJ_ITERABLE: return free_iterable(obj);
+    case OBJ_ARRAY: return free_array(obj);
 	default: printf("[ERROR] cannot free object, it is not yet supported. got object %d", obj->type); // unreachable
 	}
 }
@@ -134,6 +142,13 @@ ErrorObj* create_err_obj(const char* value, int length, ErrorType type) {
     err_obj->value = name;
     err_obj->type = type;
     return err_obj;
+}
+
+ArrayObj* create_array_obj() {
+    ArrayObj* arr = ALLOCATE_OBJECT(ArrayObj, OBJ_ARRAY);
+    arr->values = malloc(sizeof(ValueArray));
+    init_value_array(arr->values);
+    return arr;
 }
 
 

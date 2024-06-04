@@ -60,6 +60,11 @@ typedef struct {
     Obj* iterable;
     int index;
 } IterableObj;
+
+typedef struct {
+    Obj obj;
+    ValueArray* values;
+} ArrayObj;
 ///
 
 
@@ -75,6 +80,7 @@ NativeFuncObj* create_native_func_obj(NativeFn function);
 IterableObj* get_iterable(Obj* iterable);
 bool iterable_out_of_bounds(IterableObj * iterable);
 Value iterable_get_at(IterableObj* iterable, int index);
+ArrayObj* create_array_obj();
 
 
 ErrorObj* create_err_obj(const char* value, int length, ErrorType type);

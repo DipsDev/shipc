@@ -18,6 +18,7 @@ typedef enum {
     OBJ_NATIVE,
     OBJ_ERROR,
     OBJ_ITERABLE,
+    OBJ_ARRAY,
 } ObjType;
 
 typedef struct {

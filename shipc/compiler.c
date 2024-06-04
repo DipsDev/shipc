@@ -457,6 +457,25 @@ static void parse_return_statement(Parser* parser, Scanner* scanner) {
     write_chunk(current_chunk(parser), OP_RETURN, scanner->line);
 }
 
+static void parse_array_literal(Parser* parser, Scanner* scanner) {
+    unsigned int item_count = 0;
+    while (parser->current.type != TOKEN_RIGHT_SQUARE_BRACE && parser->current.type != TOKEN_EOF) {
+        parse_precedence(parser, scanner, PREC_OR);
+        item_count++;
+        if (parser->current.type != TOKEN_RIGHT_SQUARE_BRACE) {
+            expect(scanner, parser, TOKEN_COMMA, "Expected , between array values");
+        }
+    }
+    if (item_count > UINT8_MAX) {
+        error(parser, scanner, "Array literal length is too large");
+        return;
+    }
+    expect(scanner, parser, TOKEN_RIGHT_SQUARE_BRACE, "Unclosed array literal");
+    write_bytes(current_chunk(parser), OP_BUILD_ARRAY, item_count, scanner->line);
+
+
+}
+
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	expect(scanner, parser, TOKEN_IDENTIFIER, "Expected identifier");
 
@@ -676,6 +695,8 @@ ParseRule rules[] = {
   [TOKEN_RIGHT_PAREN] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LEFT_BRACE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_RIGHT_BRACE] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_LEFT_SQUARE_BRACE] = {parse_array_literal, NULL, PREC_NONE},
+  [TOKEN_RIGHT_SQUARE_BRACE] = {NULL, NULL, PREC_NONE},
   [TOKEN_COMMA] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_DOT] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_MINUS] = {parse_unary,    parse_binary, PREC_TERM},

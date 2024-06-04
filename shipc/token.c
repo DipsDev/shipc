@@ -194,6 +194,8 @@ static Token scan_token(Scanner *scanner) {
         }
 		case '-': return create_token(scanner, TOKEN_MINUS);
         case '|': return create_token(scanner, TOKEN_VERTICAL_BAR);
+        case '[': return create_token(scanner, TOKEN_LEFT_SQUARE_BRACE);
+        case ']': return create_token(scanner, TOKEN_RIGHT_SQUARE_BRACE);
 		case '{': return create_token(scanner, TOKEN_LEFT_BRACE);
 		case '}': return create_token(scanner, TOKEN_RIGHT_BRACE); 
 		case '(': return create_token(scanner, TOKEN_LEFT_PAREN); 
