@@ -70,6 +70,7 @@ typedef struct {
 
 
 #define CONVERT_OBJ(type, obj) (type*) obj
+#define IS_ITERABLE_ON(val) (IS_STRING(val) || IS_ARRAY(val)) // Add to this code as the vm progresses
 
 
 StringObj* create_string_obj(const char* value, int length);
