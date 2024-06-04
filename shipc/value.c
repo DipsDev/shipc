@@ -16,6 +16,9 @@ bool is_truthy(Value val) {
     if (IS_STRING(val)) {
         return AS_STRING(val)->length != 0;
     }
+    if (IS_ARRAY(val)) {
+        return AS_ARRAY(val)->values->count > 0;
+    }
 	return false;
 }
 
@@ -58,6 +61,24 @@ static void print_object(Value obj_val) {
         case OBJ_FUNCTION: {
             FunctionObj *func = AS_FUNCTION(obj_val);
             printf("<function %.*s at %p>", func->name->length, func->name->value, func);
+            break;
+        }
+        case OBJ_NATIVE: {
+            printf("<native function>");
+            break;
+        }
+        case OBJ_ARRAY: {
+            ArrayObj* arr = AS_ARRAY(obj_val);
+            printf("[");
+            int count = 0;
+            while (count < arr->values->count) {
+                print_value(arr->values->arr[count]);
+                if (count + 1 != arr->values->count) {
+                    printf(",");
+                }
+                count++;
+            }
+            printf("]");
             break;
         }
         default:
