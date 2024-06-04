@@ -4,6 +4,7 @@
 
 #include "objects.h"
 #include "value.h"
+#include "vm.h"
 
 static Obj* allocate_object(size_t size, ObjType type) {
     Obj* c_obj = (Obj*) malloc(size);
@@ -100,16 +101,29 @@ bool iterable_out_of_bounds(IterableObj * iterable) {
 
     }
 }
+
+static Value copy_value(Value val) {
+    if (!IS_OBJ(val)) return val;
+    Obj* obj_val = AS_OBJ(val);
+    switch (obj_val->type) {
+        case OBJ_STRING: {
+            StringObj* string_obj = CONVERT_OBJ(StringObj, obj_val);
+            return VAR_OBJ(create_string_obj(string_obj->value, string_obj->length));
+        }
+        default: return val;
+    }
+}
+
 Value iterable_get_at(IterableObj* iterable, int index) {
     switch(iterable->iterable->type) {
         case OBJ_STRING: {
-            StringObj* string_obj = (StringObj*) iterable->iterable;
+            StringObj* string_obj = CONVERT_OBJ(StringObj, iterable->iterable);
             StringObj* val_obj = create_string_obj(string_obj->value + index, 1);
             return VAR_OBJ(val_obj);
         }
         case OBJ_ARRAY: {
             ArrayObj* arr_obj = (ArrayObj*) iterable->iterable;
-            return arr_obj->values->arr[index];
+            return copy_value(arr_obj->values->arr[index]);
         }
         default: return VAR_NIL;
     }

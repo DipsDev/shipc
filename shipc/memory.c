@@ -15,9 +15,21 @@ void* reallocate(void* pointer, size_t oldCapacity, size_t newCapacity) {
 	return result;
 }
 
+static void mark_array(Obj* o) {
+    // If array is marked, then all of his values should be marked too
+    ArrayObj* obj = (ArrayObj*) o;
+    for(int i = 0; i<obj->values->count; i++) {
+        mark_value(obj->values->arr[i]);
+    }
+}
+
 void mark_object(Obj* obj) {
     if (obj == NULL) return;
     obj->isMarked = true;
+
+    if (obj->type == OBJ_ARRAY) {
+        mark_array(obj);
+    }
 }
 
 void mark_value(Value value) {
@@ -25,6 +37,8 @@ void mark_value(Value value) {
     mark_object(AS_OBJ(value));
 
 }
+
+
 
 static void mark_variables(VM* vm) {
     for (int i = vm->frameCount - 1; i >= 0; i--) {

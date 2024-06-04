@@ -410,12 +410,18 @@ static InterpretResult run(VM* vm) {
                     return runtime_error(vm, "value is not iterable", ERR_TYPE);
                 }
                 IterableObj* iter_obj = get_iterable(AS_OBJ(to_get_iter));
-                push(vm, VAR_OBJ(iter_obj));
+
+                Value f_value = VAR_OBJ(iter_obj);
+                if (IS_STRING(f_value)) { // Check if string, Strings are immutable objects. therefore f_value will contain a copy which should be garbage collected when can.
+                    add_garbage(vm, f_value);
+                }
+                push(vm, f_value);
                 break;
             }
             case OP_END_FOR: {
                 Value iter_obj = pop(vm);
-                add_garbage(vm, iter_obj);
+                // Free the iter_obj as it is not useful anymore
+                free_object(AS_OBJ(iter_obj));
                 break;
             }
             case OP_FOR_ITER: {
@@ -431,7 +437,9 @@ static InterpretResult run(VM* vm) {
                 READ_SHORT();
                 Value iterable_var_value = iterable_get_at(iter_obj, iter_obj->index);
                 iter_obj->index++;
-                add_garbage(vm, iterable_var_value);
+                if (IS_STRING(iterable_var_value)) { // Add string to garbage because it is immutable. therefore, a copy string is made.
+                    add_garbage(vm, iterable_var_value);
+                }
                 push(vm, iterable_var_value);
                 break;
             }
