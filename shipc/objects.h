@@ -78,6 +78,7 @@ StringObj* concat_strings(const char* value1, int length1, const char* value2, i
 
 FunctionObj* create_func_obj(const char* value, int length, FunctionType type);
 NativeFuncObj* create_native_func_obj(NativeFn function);
+NativeFuncObj* create_native_method_obj(NativeFn function);
 
 
 IterableObj* get_iterable(Obj* iterable);

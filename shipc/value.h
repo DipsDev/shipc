@@ -19,6 +19,8 @@ typedef enum {
     OBJ_ERROR,
     OBJ_ITERABLE,
     OBJ_ARRAY,
+    OBJ_CLASS,
+    OBJ_NATIVE_METHOD,
 } ObjType;
 
 typedef struct {
@@ -61,6 +63,8 @@ bool is_truthy(Value val);
 #define AS_FUNCTION(obj) ((FunctionObj*) AS_OBJ(obj))
 #define AS_ITERABLE(obj) ((IterableObj*) AS_OBJ(obj))
 #define AS_ARRAY(obj) ((ArrayObj*) AS_OBJ(obj))
+#define AS_NATIVE(obj) ((NativeFuncObj*) AS_OBJ(obj))
+#define AS_ERROR(obj) ((ErrorObj*) AS_OBJ(obj))
 
 // create a tagged union
 #define VAR_NUMBER(value) ((Value) {VAL_NUMBER, { .number = value}})
@@ -82,8 +86,10 @@ static inline bool test_obj_types(Value value, ObjType type) {
 #define IS_STRING(value) (test_obj_types(value, OBJ_STRING))
 #define IS_FUNCTION(value) (test_obj_types(value, OBJ_FUNCTION))
 #define IS_NATIVE(value) (test_obj_types(value, OBJ_NATIVE))
+#define IS_NATIVE_METHOD(value) (test_obj_types(value, OBJ_NATIVE_METHOD))
 #define IS_ITERABLE(value) (test_obj_types(value, OBJ_ITERABLE))
 #define IS_ARRAY(value) (test_obj_types(value, OBJ_ARRAY))
+#define IS_CLASS(value) (test_obj_types(value, OBJ_CLASS))
 #define IS_ERROR(value) (test_obj_types(value, OBJ_ERROR))
 
 #endif // !SHIP_VALUE_H_

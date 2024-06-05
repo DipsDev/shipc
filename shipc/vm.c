@@ -9,6 +9,7 @@
 #include "vm.h"
 #include "memory.h"
 #include "objects.h"
+#include "builtins.h"
 
 static InterpretResult run (VM* vm);
 
@@ -58,6 +59,7 @@ static void throw_error(VM* vm, ErrorObj* err) {
 
     fprintf(stderr, "runtime error: %.*s\n  [main.ship:%i]\n",
             err->value->length, err->value->value, errored_chunk.function->body.lines[code_offset]);
+    exit(1);
 }
 
 static InterpretResult runtime_error(VM* vm, const char* message, ErrorType type, ...) {
@@ -225,8 +227,7 @@ static InterpretResult run(VM* vm) {
 					break;
 				}
                 // if one of the values is a string, then cast everything to a string and concat it.
-				if (IS_STRING(a) || IS_STRING(b)) {
-                    // TODO: Implement string concatenation with other types
+				if (IS_STRING(a) && IS_STRING(b)) {
 					StringObj* str_a = AS_STRING(a);
 					StringObj* str_b = AS_STRING(b);
 
@@ -234,10 +235,11 @@ static InterpretResult run(VM* vm) {
                     add_garbage(vm, VAR_OBJ(concat));
 
 
+
 					push(vm, VAR_OBJ(concat));
 					break;
 				}
-				return runtime_error(vm, "unknown operands for '+' operator", ERR_TYPE);
+				return runtime_error(vm, "unknown operands for '+' operator. have you considered using .to_str()?", ERR_TYPE);
 
 			}
 			case OP_DIV: {
@@ -264,7 +266,8 @@ static InterpretResult run(VM* vm) {
 				break;
 			}
             case OP_SHOW_TOP: {
-                print_value(pop(vm));
+                Value print_val = pop(vm);
+                print_value(print_val);
                 printf("\n");
                 break;
             }
@@ -331,6 +334,25 @@ static InterpretResult run(VM* vm) {
                 frame->function->locals[variable_index].value = var_value;
 				break;
 			}
+            case OP_LOAD_ATTR: {
+                Value attr_name = READ_CONSTANT();
+                Value attr_host = peek_behind(vm, 1);
+
+                if (!IS_STRING(attr_name)) {
+                    return runtime_error(vm, "Attribute name is expected to be a string", ERR_TYPE);
+                }
+                if (IS_CLASS(attr_host)) {
+                    // Classes are not implemented in ship yet..
+                    break;
+                }
+                Value attr_res = get_builtin_attr(attr_host, AS_STRING(attr_name));
+                if (IS_ERROR(attr_res)) {
+                    throw_error(vm, (ErrorObj*) AS_OBJ(attr_res));
+                }
+                add_garbage(vm, attr_res);
+                push(vm, attr_res);
+                break;
+            }
             case OP_BUILD_ARRAY: {
                 // Read the argument count
                 uint8_t arg_count = READ_BYTE();
@@ -448,9 +470,18 @@ static InterpretResult run(VM* vm) {
                 Value func_value = peek_behind(vm, arg_count + 1);
 
                 if (IS_NATIVE(func_value)) {
-                    NativeFuncObj* native_obj = (NativeFuncObj*) AS_OBJ(func_value);
+                    NativeFuncObj* native_obj = AS_NATIVE(func_value);
                     Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
                     vm->sp -= arg_count - 1;
+                    push(vm, return_value);
+                    break;
+                }
+
+                if (IS_NATIVE_METHOD(func_value)) {
+                    Value func_host = peek_behind(vm, arg_count + 2);
+                    NativeFuncObj* native_obj = AS_NATIVE(func_value);
+                    Value return_value = native_obj->function(arg_count + 1, &func_host);
+                    vm->sp -= arg_count + 2;
                     push(vm, return_value);
                     break;
                 }

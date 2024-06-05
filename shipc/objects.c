@@ -24,6 +24,11 @@ static void free_string(Obj* str_obj) {
 	free(obj);
 }
 
+static void free_native(Obj* str_obj) {
+    NativeFuncObj* native = (NativeFuncObj*) str_obj;
+    free(native);
+}
+
 static void free_function(Obj* func_obj) {
 	FunctionObj* obj = (FunctionObj*)func_obj;
 
@@ -62,6 +67,8 @@ void free_object(Obj* obj) {
     case OBJ_ERROR: return free_error(obj);
     case OBJ_ITERABLE: return free_iterable(obj);
     case OBJ_ARRAY: return free_array(obj);
+    case OBJ_NATIVE_METHOD:
+    case OBJ_NATIVE: return free_native(obj);
 	default: printf("[ERROR] cannot free object, it is not yet supported. got object %d", obj->type); // unreachable
 	}
 }
@@ -157,6 +164,7 @@ StringObj* create_string_obj(const char* value, int length) {
 	return str_obj;
 }
 
+
 ErrorObj* create_err_obj(const char* value, int length, ErrorType type) {
     StringObj* name = create_string_obj(value, length);
     ErrorObj* err_obj = ALLOCATE_OBJECT(ErrorObj, OBJ_ERROR);
@@ -168,6 +176,7 @@ ErrorObj* create_err_obj(const char* value, int length, ErrorType type) {
     err_obj->type = type;
     return err_obj;
 }
+
 
 ArrayObj* create_array_obj() {
     ArrayObj* arr = ALLOCATE_OBJECT(ArrayObj, OBJ_ARRAY);
@@ -203,6 +212,12 @@ NativeFuncObj* create_native_func_obj(NativeFn function) {
     return func_obj;
 }
 
+NativeFuncObj* create_native_method_obj(NativeFn function) {
+    NativeFuncObj* func_obj = ALLOCATE_OBJECT(NativeFuncObj, OBJ_NATIVE_METHOD);
+    func_obj->function = function;
+    return func_obj;
+}
+
 IterableObj* get_iterable(Obj* iterable) {
     IterableObj* iter_obj = ALLOCATE_OBJECT(IterableObj, OBJ_ITERABLE);
     iter_obj->index = 0;
@@ -232,7 +247,6 @@ StringObj* concat_strings(const char* value1, int length1, const char* value2, i
 
 	str_obj->value = string_value;
 	str_obj->length = length1 + length2;
-
 	return str_obj;
 
 }

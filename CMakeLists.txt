@@ -24,6 +24,9 @@ add_executable(shipc
         shipc/value.c
         shipc/value.h
         shipc/vm.c
-        shipc/vm.h)
+        shipc/vm.h
+        shipc/builtins.c
+        shipc/builtins.h
+        shipc/builtins.h)
 
 target_link_libraries(shipc m)

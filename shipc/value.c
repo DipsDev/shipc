@@ -92,12 +92,7 @@ void print_value(Value val) {
 	case VAL_BOOL: printf("%s", AS_BOOL(val) ? "true" : "false"); break;
 	case VAL_NIL: printf("nil"); break;
 	case VAL_NUMBER:  {
-        double dummy;
-        if (modf(AS_NUMBER(val), &dummy) == 0) {
-            printf("%.0f", AS_NUMBER(val)); break;
-            return;
-        }
-        printf("%f", AS_NUMBER(val)); break;
+        printf("%g", AS_NUMBER(val)); break;
     }
 	case VAL_OBJ: print_object(val); break;
 	}

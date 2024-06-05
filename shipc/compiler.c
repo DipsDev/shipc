@@ -596,6 +596,19 @@ static void parse_foreach_statement(Parser* parser, Scanner* scanner) {
     write_chunk(current_chunk(parser), OP_END_FOR, scanner->line);
 }
 
+static void parse_attribute(Parser * parser, Scanner *scanner) {
+    if (parser->current.type != TOKEN_IDENTIFIER) {
+        error(parser, scanner, "Expected identifier");
+        return;
+    }
+    advance(scanner, parser);
+    StringObj* attribute_name = create_string_obj(parser->previous.start, parser->previous.length);
+
+    uint8_t const_index = add_constant(current_chunk(parser), VAR_OBJ(attribute_name));
+    write_bytes(current_chunk(parser), OP_LOAD_ATTR, const_index, scanner->line);
+
+}
+
 static void parse_while_statement(Parser* parser, Scanner* scanner) {
     // save the before bool expr
     int before_bool = current_chunk(parser)->count;
@@ -698,7 +711,7 @@ ParseRule rules[] = {
   [TOKEN_LEFT_SQUARE_BRACE] = {parse_array_literal, NULL, PREC_NONE},
   [TOKEN_RIGHT_SQUARE_BRACE] = {NULL, NULL, PREC_NONE},
   [TOKEN_COMMA] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_DOT] = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_DOT] = {NULL,     parse_attribute,   PREC_CALL},
   [TOKEN_MINUS] = {parse_unary,    parse_binary, PREC_TERM},
   [TOKEN_PLUS] = {NULL,     parse_binary, PREC_TERM},
   [TOKEN_SEMICOLON] = {NULL,     NULL,   PREC_NONE},
