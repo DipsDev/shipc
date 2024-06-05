@@ -428,7 +428,7 @@ static InterpretResult run(VM* vm) {
 			}
             case OP_GET_ITER: {
                 Value to_get_iter = pop(vm);
-                if (IS_ITERABLE_ON(to_get_iter)) {
+                if (!IS_ITERABLE_ON(to_get_iter)) {
                     return runtime_error(vm, "value is not iterable", ERR_TYPE);
                 }
                 IterableObj* iter_obj = get_iterable(AS_OBJ(to_get_iter));
