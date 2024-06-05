@@ -518,8 +518,12 @@ static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	}
     write_bytes(current_chunk(parser), OP_NIL, OP_RETURN, scanner->line);
 
-    free_hash_map(parser->varMap);
     parser->func->localCount = parser->varMap->count;
+
+    // Free the hashmap AFTER assigning the right localCount.
+    free_hash_map(parser->varMap);
+
+
     parser->varMap = saved_map;
 	parser->func = before_func;
 	expect(scanner, parser, TOKEN_RIGHT_BRACE, "Unclosed block in function declaration"); // eat the }

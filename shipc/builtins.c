@@ -18,6 +18,8 @@ static Value validate_attr(StringObj* attr_obj, const char* real_attr, int real_
 }
 
 #define RUN_ATTR(attr_name, attr_length, func) validate_attr(attr_given, attr_name, attr_length, func)
+#define ATTRIBUTE_HOST(args) *args
+#define ATTRIBUTE_ARGS(args) *(args + 2);
 
 
 // args[0] will always be the value the builtin is called on it
@@ -29,8 +31,9 @@ static Value validate_attr(StringObj* attr_obj, const char* real_attr, int real_
 
 static Value to_str(int arg_count, Value* args) {
     REQ_ARGS(1, arg_count, 1);
-    char string[32];
-    snprintf(string, sizeof(string), "%g", AS_NUMBER(*args));
+    Value num = ATTRIBUTE_HOST(args);
+    char string[50];
+    snprintf(string, sizeof(string), "%g", AS_NUMBER(num));
     StringObj* str_num = create_string_obj(string, strlen(string));
     return VAR_OBJ(str_num);
 }

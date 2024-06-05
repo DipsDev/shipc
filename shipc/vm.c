@@ -138,6 +138,7 @@ static InterpretResult run(VM* vm) {
     StackFrame* frame = &vm->callStack[vm->frameCount - 1];
 #define READ_BYTE() (*frame->ip++)
 #define READ_CONSTANT() frame->function->body.constants.arr[READ_BYTE()]
+#define THROW_IF_ERROR(value) if (IS_ERROR(value)) throw_error(vm, AS_ERROR(value))
 #define READ_SHORT() \
 	(frame->ip += 2, (uint16_t) ((frame->ip[-2] << 8) | frame->ip[-1]))
 
@@ -482,6 +483,7 @@ static InterpretResult run(VM* vm) {
                     NativeFuncObj* native_obj = AS_NATIVE(func_value);
                     Value return_value = native_obj->function(arg_count + 1, &func_host);
                     vm->sp -= arg_count + 2;
+                    THROW_IF_ERROR(return_value);
                     push(vm, return_value);
                     break;
                 }
