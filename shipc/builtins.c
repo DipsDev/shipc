@@ -165,6 +165,59 @@ static Value string_attrs(StringObj* attr_given) {
     }
 }
 
+/*----------------------
+ |  String Builtins
+ -----------------------*/
+
+static Value Array_push(int arg_count, Value* args) {
+    REQ_ARGS(1, arg_count, 1);
+    ArrayObj* arr = AS_ARRAY(*args);
+    Value val = *ATTRIBUTE_ARGS(args);
+    write_value_array(arr->values, val);
+    return VAR_NIL;
+}
+
+static Value Array_pop(int arg_count, Value* args) {
+    REQ_ARGS(1, arg_count, 1);
+    ArrayObj* arr = AS_ARRAY(*args);
+    Value val = *ATTRIBUTE_ARGS(args);
+    if (!IS_NUMBER(val)) {
+        ERROR("pop(num) expected a number", ERR_TYPE);
+    }
+    double c = AS_NUMBER(val);
+    if (c  == 0) {
+        arr->values->count -= 1;
+        return arr->values->arr[arr->values->count];
+    }
+
+    ArrayObj* new = create_array_obj();
+    for (int i = arr->values->count - c - 1; i < arr->values->count; i++) {
+        write_value_array(new->values, arr->values->arr[i]);
+    }
+    arr->values->count -= c + 1;
+
+    return VAR_OBJ(new);
+
+
+
+}
+
+static Value array_attrs(StringObj* attr_given) {
+    switch(attr_given->value[0]) {
+        case 'p': {
+            if (attr_given->length == 1) {
+                ERROR("Number has no attribute", ERR_NAME);
+            }
+            switch(attr_given->value[1]) {
+                case 'o':
+                    return RUN_ATTR("pop", 3, Array_pop);
+                case 'u': return RUN_ATTR("push", 4, Array_push);
+            }
+        }
+        default:
+            ERROR("Array has no attribute", ERR_NAME);
+    }
+}
 
 Value get_builtin_attr(Value attr_host, StringObj* attr_given) {
     switch (attr_host.type) {
@@ -172,6 +225,7 @@ Value get_builtin_attr(Value attr_host, StringObj* attr_given) {
         case VAL_OBJ: {
             switch(AS_OBJ(attr_host)->type) {
                 case OBJ_STRING: return string_attrs(attr_given);
+                case OBJ_ARRAY: return array_attrs(attr_given);
                 default:
                     ERROR("Not implemented; builtins.c", ERR_NAME);
             }

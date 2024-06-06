@@ -39,6 +39,7 @@ void write_value_array(ValueArray* values, Value value) {
 	values->count++;
 }
 
+
 void free_value_array(ValueArray* arr) {
 	FREE_ARRAY(Value, arr->arr, arr->capacity);
 	init_value_array(arr);
