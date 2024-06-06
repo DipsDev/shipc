@@ -40,9 +40,26 @@ void write_value_array(ValueArray* values, Value value) {
 }
 
 
+
+
 void free_value_array(ValueArray* arr) {
+    // The problem is here....
+    // freeing the array should not free his values too
+    // consider the following code
+    // var a = "Hello World";
+    // var b = [4, a];
+    // var b = 5; // gc runs here
 	FREE_ARRAY(Value, arr->arr, arr->capacity);
 	init_value_array(arr);
+}
+
+void free_value_array_with_values(ValueArray* arr) {
+    for (int i = 0; i < arr->count; i++) {
+        if( IS_OBJ(arr->arr[i])) {
+            free_object(AS_OBJ(arr->arr[i]));
+        }
+    }
+    free_value_array(arr);
 }
 
 static void print_object(Value obj_val) {

@@ -49,6 +49,7 @@ typedef struct {
 void write_value_array(ValueArray* values, Value value);
 void init_value_array(ValueArray* arr);
 void free_value_array(ValueArray* arr);
+void free_value_array_with_values(ValueArray* arr);
 void print_value(Value val);
 bool is_truthy(Value val);
 

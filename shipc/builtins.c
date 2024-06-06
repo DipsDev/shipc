@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <ansidecl.h>
 
 
 // Helper macro to set the min and max arguments a builtin takes

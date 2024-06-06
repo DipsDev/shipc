@@ -95,7 +95,15 @@ HashNode* get_node(HashMap* map, char* name, int name_len) {
 }
 
 void free_hash_map(HashMap* map) {
-    free(map->arr); // Free the array directly, as the char* is right from the source code.
+    for (int i = 0; i <map->capacity; i++) {
+        HashNode* pos = map->arr[i];
+        while (pos != NULL) {
+            HashNode* next = (HashNode *) pos->next;
+            free(pos);
+            pos = next;
+        }
+    }
+    free(map->arr);
 	free(map);
 }
 
@@ -177,18 +185,14 @@ ValueNode * get_global(ValueTable * map, char* name, int name_len) {
 void free_globals(ValueTable * map) {
     // free each bucket, and then free the entire map
     for (unsigned int i = 0; i < map->capacity; i++) {
-        if (map->arr[i] == NULL) {
-            continue;
-        }
         ValueNode * pos = (ValueNode *) map->arr[i];
         while (pos != NULL) {
-            ValueNode * before = (ValueNode *) pos->next;
-            if (IS_OBJ(pos->val) && !IS_NATIVE(pos->val)) { // Don't free the native functions.
+            ValueNode * next = (ValueNode *) pos->next;
+            if (IS_OBJ(pos->val)) {
                 free_object(AS_OBJ(pos->val));
-                free(pos->name);
             }
             free(pos);
-            pos = before;
+            pos = next;
         }
     }
     free(map->arr);

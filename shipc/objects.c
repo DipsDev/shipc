@@ -34,13 +34,14 @@ static void free_function(Obj* func_obj) {
 
 	free_string((Obj *) obj->name);
 	free_chunk(&obj->body);
+    free(obj);
 
 }
 
 static void free_array(Obj* arr_obj) {
     ArrayObj* obj = (ArrayObj*) arr_obj;
     free_value_array(obj->values);
-    free(arr_obj);
+    free(obj);
 }
 
 static void free_error(Obj* err_obj) {

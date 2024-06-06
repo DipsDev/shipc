@@ -59,6 +59,7 @@ static void throw_error(VM* vm, ErrorObj* err) {
 
     fprintf(stderr, "runtime error: %.*s\n  [main.ship:%i]\n",
             err->value->length, err->value->value, errored_chunk.function->body.lines[code_offset]);
+    free_vm(vm);
     exit(1);
 }
 
@@ -483,6 +484,7 @@ static InterpretResult run(VM* vm) {
                     Value return_value = native_obj->function(arg_count, vm->sp - arg_count - 2);
                     vm->sp -= arg_count + 2;
                     THROW_IF_ERROR(return_value);
+                    add_garbage(vm, return_value);
                     push(vm, return_value);
                     break;
                 }

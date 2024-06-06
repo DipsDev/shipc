@@ -47,6 +47,6 @@ void change_constant(Chunk* chunk, uint8_t index, Value constant) {
 void free_chunk(Chunk* chunk) {
 	FREE_ARRAY(uint8_t, chunk->codes, chunk->capacity);
     FREE_ARRAY(int, chunk->lines, chunk->capacity);
-	free_value_array(&chunk->constants);
+	free_value_array_with_values(&chunk->constants);
 	init_chunk(chunk);
 }

@@ -37,7 +37,9 @@ static char* read_source_code() {
 }
 
 void run_code() {
-    FunctionObj* compiled_func = compile(read_source_code());
+    char* source_code = read_source_code();
+    FunctionObj* compiled_func = compile(source_code);
+    free(source_code);
     if (compiled_func == NULL) {
         exit(1);
     }
