@@ -41,6 +41,7 @@ static void free_function(Obj* func_obj) {
 static void free_array(Obj* arr_obj) {
     ArrayObj* obj = (ArrayObj*) arr_obj;
     free_value_array(obj->values);
+    free(obj->values);
     free(obj);
 }
 
