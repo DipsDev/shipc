@@ -15,8 +15,52 @@ Ship uses curly braces (`{}`) to identify blocks, and signifies end of statement
 ### Values
 Ship has 4 types of values.
 number, boolean, nil and object.\
-strings, functions and classes are considered objects.
+strings, functions, arrays and classes are considered objects.
 
+
+#### Arrays
+Arrays are mutable, reference related objects. which start at index 0.
+```javascript
+var a = [1, 2, 3, 5]
+var b = a;
+b.push(100); // will affect a too!
+```
+
+| Attribute    | Arguments | Description                                     | Return Type  |
+|--------------|-----------|-------------------------------------------------|--------------|
+| Array.push() | v: Any    | Pushes args[0] into the last index of the array | Nil          |
+| Array.pop()  | n: Number | Pops n elements from the end of the array       | Array or Any |
+| Array.len()  |           | Returns the length of an array.                 | Number       |
+
+#### Strings
+Strings are made using `"`.
+```javascript
+var x = "Hello World"; // Simple String
+```
+| Attribute      | Arguments | Description                                | Return Type                     |
+|----------------|-----------|--------------------------------------------|---------------------------------|
+| String.len()   |           | Returns the length of the string           | Number                          |
+| String.title() |           | Capitalizes the first letter of the string | String. a copy of the original. |
+| String.copy()  |           | Returns a copy of the given string         | String                          |
+
+
+#### Numbers
+Numbers are doubles.
+```javascript
+var x = 4.0;
+var x = 3;
+```
+
+
+| Attribute       | Arguments | Description                                           | Return Type |
+|-----------------|-----------|-------------------------------------------------------|-------------|
+| Number.to_str() |           | Returns the number as string                          | String      |
+| Number.next()   |           | Returns the next consecutive integer. (n + 1)         | Number      |
+| Number.pred()   |           | Returns the previous consecutive integer. (n - 1)     | Number      |
+| Number.times()  | n: Number | Returns an array containing [0, n) excluding          | Array       |
+| Number.odd()    |           | Returns whether or not the number is odd              | Boolean     |
+| Number.even()   |           | Returns whether or not the number is even             | Boolean     |
+| Number.upto()   | n: Number | Returns an array from self until n [self, n] included | Array       |
 
 ### Variables
 Variables are essentially the same as in javascript. they are dynamic mutable.\
