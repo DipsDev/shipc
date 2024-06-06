@@ -148,18 +148,26 @@ static Value String_length(int arg_count, Value* args) {
     return VAR_NUMBER(str->length);
 }
 
-static Value String_capitalize(int arg_count, Value* args) {
+static Value String_copy(int arg_count, Value* args) {
     REQ_ARGS(0, arg_count, 0);
     StringObj* str = AS_STRING(*args);
-    *str->value = *str->value & 0xDF;
+    StringObj* copy = create_string_obj(str->value, str->length);
+    return VAR_OBJ(copy);
+}
 
-    return VAR_NIL;
+static Value String_capitalize(int arg_count, Value* args) {
+    REQ_ARGS(0, arg_count, 0);
+    StringObj* original = AS_STRING(*args);
+    StringObj* str = create_string_obj(original->value, original->length);
+    *str->value = *str->value & 0xDF;
+    return VAR_OBJ(str);
 }
 
 static Value string_attrs(StringObj* attr_given) {
     switch(attr_given->value[0]) {
         case 'l': return RUN_ATTR("len", 3, String_length);
-        case 'c': return RUN_ATTR("caps", 4, String_capitalize);
+        case 't': return RUN_ATTR("title", 5, String_capitalize);
+        case 'c': return RUN_ATTR("copy", 4, String_copy);
         default:
             ERROR("String has no attribute", ERR_NAME);
     }
@@ -197,13 +205,17 @@ static Value Array_pop(int arg_count, Value* args) {
     arr->values->count -= c + 1;
 
     return VAR_OBJ(new);
+}
 
-
-
+static Value Array_length(int arg_count, Value* args) {
+    REQ_ARGS(0, arg_count, 0);
+    ArrayObj* arr = AS_ARRAY(*args);
+    return VAR_NUMBER(arr->values->count);
 }
 
 static Value array_attrs(StringObj* attr_given) {
     switch(attr_given->value[0]) {
+        case 'l': return RUN_ATTR("len", 3, Array_length);
         case 'p': {
             if (attr_given->length == 1) {
                 ERROR("Number has no attribute", ERR_NAME);
