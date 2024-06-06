@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <ansidecl.h>
 
 
 // Helper macro to set the min and max arguments a builtin takes
@@ -21,7 +22,7 @@ static Value validate_attr(StringObj* attr_obj, const char* real_attr, int real_
 #define ATTRIBUTE_HOST(args) *args
 #define ATTRIBUTE_ARGS(args) (args + 2);
 
-#define ERROR(str, len, type) return VAR_OBJ(create_err_obj(str, len, type));
+#define ERROR(str, type) return VAR_OBJ(create_err_obj(str, strlen(str), type));
 
 
 // args[0] will always be the value the builtin is called on it
@@ -100,7 +101,7 @@ static Value Number_upto(int arg_count, Value* args) {
     Value top = *ATTRIBUTE_ARGS(args);
 
     if (!IS_NUMBER(top)) {
-        ERROR("'Upto' expected number variable.", 23, ERR_TYPE);
+        ERROR("'Upto' expected number variable.", ERR_TYPE);
     }
 
     ArrayObj* arr = create_array_obj();
@@ -133,12 +134,51 @@ static Value num_attrs(StringObj* attr_given) {
 
 }
 
+
+/*----------------------
+ |  String Builtins
+ -----------------------*/
+
+/*
+ * Returns the length of a string
+ */
+static Value String_length(int arg_count, Value* args) {
+    REQ_ARGS(0, arg_count, 0);
+    StringObj* str = AS_STRING(*args);
+    return VAR_NUMBER(str->length);
+}
+
+static Value String_capitalize(int arg_count, Value* args) {
+    REQ_ARGS(0, arg_count, 0);
+    StringObj* str = AS_STRING(*args);
+    *str->value = *str->value & 0xDF;
+
+    return VAR_NIL;
+}
+
+static Value string_attrs(StringObj* attr_given) {
+    switch(attr_given->value[0]) {
+        case 'l': return RUN_ATTR("len", 3, String_length);
+        case 'c': return RUN_ATTR("caps", 4, String_capitalize);
+        default:
+            ERROR("String has no attribute", ERR_NAME);
+    }
+}
+
+
 Value get_builtin_attr(Value attr_host, StringObj* attr_given) {
     switch (attr_host.type) {
         case VAL_NUMBER: return num_attrs(attr_given);
+        case VAL_OBJ: {
+            switch(AS_OBJ(attr_host)->type) {
+                case OBJ_STRING: return string_attrs(attr_given);
+                default:
+                    ERROR("Not implemented; builtins.c", ERR_NAME);
+            }
+        }
         default: {
             printf("not implemented; builtins.c");
-            return VAR_OBJ(create_err_obj("Not implemented; builtins.c", strlen("Not implemented; builtins.c"), ERR_TYPE));
+            ERROR("Not implemented; builtins.c", ERR_NAME);
         }
     }
 }
