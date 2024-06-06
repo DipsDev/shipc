@@ -39,13 +39,14 @@ static char* read_source_code() {
 void run_code() {
     char* source_code = read_source_code();
     FunctionObj* compiled_func = compile(source_code);
-    free(source_code);
     if (compiled_func == NULL) {
+        free(source_code);
         exit(1);
     }
 #ifdef SHIP_DEBUG
     disassemble_func(compiled_func);
 #endif
+    free(source_code);
 
     VM vm;
     init_vm(&vm);
