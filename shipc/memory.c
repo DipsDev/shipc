@@ -27,9 +27,19 @@ void mark_object(Obj* obj) {
     if (obj == NULL) return;
     obj->isMarked = true;
 
-    if (obj->type == OBJ_ARRAY) {
-        mark_array(obj);
+    switch (obj->type) {
+        case OBJ_ARRAY:
+            mark_array(obj); // If array is marked, then we have access to all of his elements.
+            break;
+        case OBJ_ITERABLE:
+            // if iterable is marked, then we have access to the obj he iterates on.
+            mark_object(((IterableObj *) obj)->iterable);
+            break;
+
+        default: break;
     }
+
+
 }
 
 void mark_value(Value value) {
@@ -48,6 +58,12 @@ static void mark_variables(VM* vm) {
             Local current_local = curr->function->locals[j];
             mark_value(current_local.value);
         }
+    }
+}
+
+static void mark_stack(VM* vm) {
+    for(Value* i = vm->stack; i < vm->sp; i++) {
+        mark_value(*i);
     }
 }
 
@@ -118,6 +134,7 @@ void collect_garbage(VM* vm) {
     if (vm->heapObjects + 1 < vm->heapCapacity) return;
     // mark and sweep
     mark_variables(vm);
+    mark_stack(vm);
     sweep(vm);
     // bop the capacity to reduce collection
     vm->heapCapacity *= 2;
