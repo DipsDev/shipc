@@ -366,7 +366,7 @@ static InterpretResult run(VM* vm) {
                 vm->sp -= arg_count;
 
                 push(vm, VAR_OBJ(arr));
-                // add_garbage(vm, VAR_OBJ(arr));
+                add_garbage(vm, VAR_OBJ(arr));
                 break;
             }
 			case OP_ASSIGN_GLOBAL: {
@@ -479,9 +479,8 @@ static InterpretResult run(VM* vm) {
                 }
 
                 if (IS_NATIVE_METHOD(func_value)) {
-                    Value func_host = peek_behind(vm, arg_count + 2);
                     NativeFuncObj* native_obj = AS_NATIVE(func_value);
-                    Value return_value = native_obj->function(arg_count + 1, &func_host);
+                    Value return_value = native_obj->function(arg_count, vm->sp - arg_count - 2);
                     vm->sp -= arg_count + 2;
                     THROW_IF_ERROR(return_value);
                     push(vm, return_value);

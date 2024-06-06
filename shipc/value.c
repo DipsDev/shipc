@@ -64,7 +64,11 @@ static void print_object(Value obj_val) {
             break;
         }
         case OBJ_NATIVE: {
-            printf("<native function>");
+            printf("<native_function at %p>", AS_NATIVE(obj_val)->function);
+            break;
+        }
+        case OBJ_NATIVE_METHOD: {
+            printf("<native_method at %p>", AS_NATIVE(obj_val)->function);
             break;
         }
         case OBJ_ARRAY: {
