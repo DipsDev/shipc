@@ -436,16 +436,12 @@ static InterpretResult run(VM* vm) {
                 IterableObj* iter_obj = get_iterable(AS_OBJ(to_get_iter));
 
                 Value f_value = VAR_OBJ(iter_obj);
-                if (IS_STRING(f_value)) { // Check if string, Strings are immutable objects. therefore f_value will contain a copy which should be garbage collected when can.
-                    add_garbage(vm, f_value);
-                }
+                add_garbage(vm, f_value);
                 push(vm, f_value);
                 break;
             }
             case OP_END_FOR: {
                 Value iter_obj = pop(vm);
-                // Free the iter_obj as it is not useful anymore
-                free_object(AS_OBJ(iter_obj));
                 break;
             }
             case OP_FOR_ITER: {
