@@ -186,10 +186,10 @@ static Token scan_token(Scanner *scanner) {
             if (!match(scanner, '/')) {
                 return create_token(scanner, TOKEN_SLASH);
             }
-            while (peek(scanner) != '\n') {
+            while (peek(scanner) != '\n' && peek(scanner) != '\r') {
                 advance(scanner);
             }
-            advance(scanner); // eat the \n
+            remove_whitespaces(scanner);
             return scan_token(scanner);
         }
 		case '-': return create_token(scanner, TOKEN_MINUS);
