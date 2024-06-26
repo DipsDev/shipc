@@ -177,7 +177,7 @@ Consider the following python code:
 def a():
     x = 0
     while x <= 1_000_000_000:
-        x = x - 1
+        x = x + 1
 a()
 ```
 
@@ -185,8 +185,8 @@ And it's .ship version:
 ```rust
 fn a() {
     var x = 0;
-    while x <= 1_000_000_000 {
-        x = x - 1;
+    while x <= 1000000000 {
+        x = x.next();
     }
 }
 a();
