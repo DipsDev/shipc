@@ -1,17 +1,13 @@
 # Ship the programming language, once again!
 
-#### This is probably my last implementation of ship. but now in C.
-
-This project served as a learning project for the C language.\
-I might have made some mistakes here and there, and I will continue to improve on this language.\
-
-The language is 100% custom-made, with its own VM and bytecode version.\
-Ship is a dynamic, high-level garbage-collected language inspired by javascript and lua.\
-Ship uses curly braces (`{}`) to identify blocks, and signifies end of statements with `;`
+I wanted to create a fully blown programming language and learn a bit of C.\
+The language is 100% custom-made (only std libraries), with its own VM and bytecode version.\
+\
+Ship is a dynamic, high-level, garbage-collected language inspired by Javascript and Lua.\
+Ship uses curly braces (`{}`) to identify blocks, and requires `;`.
 
 
 ## Features
-
 ### Values
 Ship has 4 types of values.
 number, boolean, nil and object.\
@@ -26,11 +22,11 @@ var b = a;
 b.push(100); // will affect a too!
 ```
 
-| Attribute    | Arguments | Description                                     | Return Type  |
-|--------------|-----------|-------------------------------------------------|--------------|
-| Array.push() | v: Any    | Pushes args[0] into the last index of the array | Nil          |
-| Array.pop()  | n: Number | Pops n elements from the end of the array       | Array or Any |
-| Array.len()  |           | Returns the length of an array.                 | Number       |
+| Attribute     | Arguments | Description                                     | Return Type  |
+|---------------|-----------|-------------------------------------------------|--------------|
+| Array.push(v) | v: Any    | Pushes args[0] into the last index of the array | Nil          |
+| Array.pop(n)  | n: Number | Pops n elements from the end of the array       | Array or Any |
+| Array.len()   |           | Returns the length of an array.                 | Number       |
 
 #### Strings
 Strings are made using `"`.
@@ -57,10 +53,10 @@ var x = 3;
 | Number.to_str() |           | Returns the number as string                          | String      |
 | Number.next()   |           | Returns the next consecutive integer. (n + 1)         | Number      |
 | Number.pred()   |           | Returns the previous consecutive integer. (n - 1)     | Number      |
-| Number.times()  | n: Number | Returns an array containing [0, n) excluding          | Array       |
+| Number.times()  |           | Returns an array containing [0, self) excluding       | Array       |
 | Number.odd()    |           | Returns whether or not the number is odd              | Boolean     |
 | Number.even()   |           | Returns whether or not the number is even             | Boolean     |
-| Number.upto()   | n: Number | Returns an array from self until n [self, n] included | Array       |
+| Number.upto(n)  | n: Number | Returns an array from self until n [self, n] included | Array       |
 
 ### Variables
 Variables are essentially the same as in javascript. they are dynamic mutable.\
@@ -133,7 +129,7 @@ my_print("Hello From Ship!");
 
 ### Errors
 This is a feature that I worked hard to implement.\
-ship has a great error information. and will try to guide you.\
+ship has a great error information. and will try to guide you through the code.\
 \
 for example:
 ```rust
@@ -146,9 +142,7 @@ fn get_max(a, b) {
 
 print(get_max100, 34));
 ```
-Can you spot the error in the following ship code?\
-Of course! the user has missed an opening `(`.\
-Don't worry, ship got you covered.
+Ship helps developers by using a robust error system, to help developers identify common errors.
 ```
 error: Missing parentheses in call
     [main.ship:8:16]
@@ -156,9 +150,16 @@ error: Missing parentheses in call
   8 | print(get_max100, 34));
     |             ^^^^
 ```
-What a blast!
 
-### Roadmap
+## Running
+Ship uses cmake to handle builds.\
+In order to create a release build by yourself, build the cmake project in release mode.
+```
+$ cmake -DCMAKE_BUILD_TYPE=Release -S /path/to/source-dir -B /path/to/build-dir
+$ cmake --build /path/to/build-dir
+```
+
+## Roadmap
 - While loops (Done)
 - Global and local variables (Done)
 - Math expressions (Done)
@@ -194,5 +195,4 @@ a();
 
 ##### Results
 This python code, took about 32.3 seconds to run.\
-My ship code, took about 28.8 seconds to run. 
-
+My ship code, took about 28.8 seconds to run.
