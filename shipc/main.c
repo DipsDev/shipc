@@ -7,6 +7,7 @@
 
 #include <time.h>
 
+#define SHIP_DEBUG
 
 static char* read_source_code() {
     // open the file

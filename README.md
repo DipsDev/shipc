@@ -77,13 +77,13 @@ while x > 3 {
 }
 ```
 
-Foreach loops are a different thing,\
+For loops are a different thing,\
 ship supports the following syntax similar to how for loop works in python.\
 the following ship code equals to the following python code:\
 `main.ship`
 ```ruby
 var best_lang = "ship";
-foreach best_lang |char| {
+for char in best_lang {
     print(char);
 }
 ```
@@ -109,7 +109,7 @@ if a >= 3 {
 Arrays are a new feature in ship. they work like any other language.
 ```rust
 var classes = ["Biology", "Math", "Music", "English"];
-foreach classes |class| {
+for class in classes {
     print(class);
 }
 ```
