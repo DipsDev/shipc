@@ -566,7 +566,7 @@ static void parse_for_statement(Parser* parser, Scanner* scanner) {
     write_chunk(current_chunk(parser), OP_GET_ITER, scanner->line);
 
 
-    int jmp_to = current_chunk(parser)->count;
+    int for_iter_loc = current_chunk(parser)->count;
     write_chunk(current_chunk(parser), OP_FOR_ITER, scanner->line);
     write_bytes(current_chunk(parser), 0xff, 0xff, scanner->line);
 
@@ -579,16 +579,17 @@ static void parse_for_statement(Parser* parser, Scanner* scanner) {
     }
 
     expect(scanner, parser, TOKEN_RIGHT_BRACE, "Expected } after for loop block");
-    write_chunk(current_chunk(parser), OP_JUMP_BACKWARD, scanner->line);
 
+
+    write_chunk(current_chunk(parser), OP_JUMP_BACKWARD, scanner->line);
     // Set the jump size
-    int body_size = current_chunk(parser)->count - jmp_to + 2;
+    int body_size = current_chunk(parser)->count - for_iter_loc + 2;
     write_bytes(current_chunk(parser), (body_size >> 8) & 0xff, body_size & 0xff, scanner->line);
 
     // Set the jump over the for jmp
     int jmp_over_size = body_size - 3;
-    current_chunk(parser)->codes[jmp_to + 1] =(jmp_over_size >> 8) & 0xff;
-    current_chunk(parser)->codes[jmp_to + 2] = jmp_over_size & 0xff;
+    current_chunk(parser)->codes[for_iter_loc + 1] = (jmp_over_size >> 8) & 0xff;
+    current_chunk(parser)->codes[for_iter_loc + 2] = jmp_over_size & 0xff;
     write_chunk(current_chunk(parser), OP_END_FOR, scanner->line);
 }
 
