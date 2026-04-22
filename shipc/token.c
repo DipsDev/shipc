@@ -1,5 +1,4 @@
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "token.h"
@@ -83,14 +82,14 @@ static bool is_alpha(char c) {
 }
 
 static Token number(Scanner* scanner) {
-	// run until you encounter a non numerical character.
+	// run until you encounter a non-numerical character.
 	while (is_numeric(peek(scanner))) advance(scanner);
 
 	// if encounter a .
 	if (peek(scanner) == '.' && is_numeric(peek_next(scanner))) {
 		// eat the .
 		advance(scanner);
-		// advance until encountering another non numerical character.
+		// advance until encountering another non-numerical character.
 		// because we already ate the ., encoutering another . will not take it as a valid number. but a regular dot.
 		while (is_numeric(peek(scanner))) advance(scanner);
 	}
