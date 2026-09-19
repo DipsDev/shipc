@@ -108,7 +108,7 @@ static TokenType reserved_keywords(Scanner* scanner, int length, const char* res
 static TokenType identifier_type(Scanner* scanner) {
 	switch (*(scanner->start))
 	{
-		case 'v': return reserved_keywords(scanner, 2, "ar", TOKEN_VAR);
+		case 'l': return reserved_keywords(scanner, 2, "et", TOKEN_VAR);
         case 'e': return reserved_keywords(scanner, 3, "lse", TOKEN_ELSE);
 		case 'f': {
 			switch (scanner->start[1]) {
