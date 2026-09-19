@@ -476,6 +476,11 @@ static void parse_array_literal(Parser* parser, Scanner* scanner) {
 
 }
 
+static void parse_range_literal(Parser* parser, Scanner* scanner) {
+    parse_precedence(parser, scanner, (Precedence)(PREC_COMPARISON + 1));
+    write_chunk(current_chunk(parser), OP_BUILD_RANGE, scanner->line);
+}
+
 static void parse_func_statement(Parser* parser, Scanner* scanner) {
 	expect(scanner, parser, TOKEN_IDENTIFIER, "Expected identifier");
 
@@ -705,6 +710,7 @@ ParseRule rules[] = {
   [TOKEN_LEFT_BRACE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_RIGHT_BRACE] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LEFT_SQUARE_BRACE] = {parse_array_literal, NULL, PREC_NONE},
+  [TOKEN_DOT_DOT] = {NULL, parse_range_literal, PREC_CALL},
   [TOKEN_RIGHT_SQUARE_BRACE] = {NULL, NULL, PREC_NONE},
   [TOKEN_COMMA] = {NULL,     NULL,   PREC_NONE},
   [TOKEN_DOT] = {NULL,     parse_attribute,   PREC_CALL},

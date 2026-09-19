@@ -110,6 +110,7 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
         case OP_RETURN: return simple_instruction("OP_RETURN", offset);
+		case OP_BUILD_RANGE: return simple_instruction("OP_BUILD_RANGE", offset);
 		case OP_CONSTANT: return constant_instruction(&func->body, offset);
         default: {
             printf("Uncaught opcode %u", code);

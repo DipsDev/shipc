@@ -370,6 +370,15 @@ static InterpretResult run(VM* vm) {
                 add_garbage(vm, VAR_OBJ(arr));
                 break;
             }
+            case OP_BUILD_RANGE: {
+                Value finish = pop(vm);
+                Value start = pop(vm);
+
+                RangeObj* range = create_range_obj(&start, &finish, 1);
+                push(vm, VAR_OBJ(range));
+                add_garbage(vm, VAR_OBJ(range));
+                break;
+            }
 			case OP_ASSIGN_GLOBAL: {
                 Value  var_name = READ_CONSTANT();
                 if (!IS_STRING(var_name)) {

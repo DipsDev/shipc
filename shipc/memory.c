@@ -35,7 +35,13 @@ void mark_object(Obj* obj) {
             // if iterable is marked, then we have access to the obj he iterates on.
             mark_object(((IterableObj *) obj)->iterable);
             break;
+        case OBJ_RANGE: {
+            RangeObj* range = (RangeObj*) obj;
 
+            mark_object(obj);
+            mark_value(*range->finish);
+            mark_value(*range->start);
+        }
         default: break;
     }
 

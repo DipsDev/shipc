@@ -199,7 +199,9 @@ static Token scan_token(Scanner *scanner) {
 		case '}': return create_token(scanner, TOKEN_RIGHT_BRACE); 
 		case '(': return create_token(scanner, TOKEN_LEFT_PAREN); 
 		case ')': return create_token(scanner, TOKEN_RIGHT_PAREN); 
-		case '.': return create_token(scanner, TOKEN_DOT);
+		case '.': {
+            return create_token(scanner, match(scanner, '.') ? TOKEN_DOT_DOT : TOKEN_DOT);
+        }
 		case ',': return create_token(scanner, TOKEN_COMMA);
 		case '=': {
 			return create_token(scanner, match(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);

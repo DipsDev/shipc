@@ -65,12 +65,20 @@ typedef struct {
     Obj obj;
     ValueArray* values;
 } ArrayObj;
+
+typedef struct {
+	Obj obj;
+
+	Value* start;
+	Value* finish;
+	int step;
+} RangeObj;
 ///
 
 
 
 #define CONVERT_OBJ(type, obj) (type*) obj
-#define IS_ITERABLE_ON(val) (IS_STRING(val) || IS_ARRAY(val)) // Add to this code as the vm progresses
+#define IS_ITERABLE_ON(val) (IS_STRING(val) || IS_ARRAY(val) || IS_RANGE(val)) // Add to this code as the vm progresses
 
 
 StringObj* create_string_obj(const char* value, int length);
@@ -85,6 +93,7 @@ IterableObj* get_iterable(Obj* iterable);
 bool iterable_out_of_bounds(IterableObj * iterable);
 Value iterable_get_at(IterableObj* iterable, int index);
 ArrayObj* create_array_obj();
+RangeObj* create_range_obj(Value* start, Value* finish, int step);
 
 
 ErrorObj* create_err_obj(const char* value, int length, ErrorType type);

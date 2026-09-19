@@ -62,6 +62,11 @@ static void free_iterable(Obj* iter_obj) {
     free(obj);
 }
 
+static void free_range(Obj* range_obj) {
+    RangeObj * range = (RangeObj*) range_obj;
+    free(range);
+}
+
 void free_object(Obj* obj) {
 	switch (obj->type) {
 	case OBJ_STRING: return free_string(obj);
@@ -69,6 +74,7 @@ void free_object(Obj* obj) {
     case OBJ_ERROR: return free_error(obj);
     case OBJ_ITERABLE: return free_iterable(obj);
     case OBJ_ARRAY: return free_array(obj);
+    case OBJ_RANGE: return free_range(obj);
     case OBJ_NATIVE_METHOD:
     case OBJ_NATIVE: return free_native(obj);
 	default: printf("[ERROR] cannot free object, it is not yet supported. got object %d", obj->type); // unreachable
@@ -102,9 +108,16 @@ bool iterable_out_of_bounds(IterableObj * iterable) {
             StringObj* temp_obj = (StringObj*) iterable->iterable;
             return temp_obj->length <= iterable->index;
 
-        } case OBJ_ARRAY: {
+        }
+        case OBJ_ARRAY: {
                 ArrayObj* temp_obj = (ArrayObj* )iterable->iterable;
                 return iterable->index >= temp_obj->values->count;
+        }
+        case OBJ_RANGE: {
+            RangeObj* temp_obj = (RangeObj*) iterable->iterable;
+            double current = AS_NUMBER(*temp_obj->start) + (iterable->index * temp_obj->step);
+
+            return current > AS_NUMBER(*temp_obj->finish);
         }
         default: return true; // Add more as the vm gets bigger
 
@@ -133,6 +146,14 @@ Value iterable_get_at(IterableObj* iterable, int index) {
         case OBJ_ARRAY: {
             ArrayObj* arr_obj = (ArrayObj*) iterable->iterable;
             return copy_value(arr_obj->values->arr[index]);
+        }
+        case OBJ_RANGE: {
+            RangeObj* range = (RangeObj*) iterable->iterable;
+
+            double start_val = AS_NUMBER(*range->start);
+            double current_val = start_val + (index * range->step);
+
+            return VAR_NUMBER(current_val);
         }
         default: return VAR_NIL;
     }
@@ -185,6 +206,14 @@ ArrayObj* create_array_obj() {
     arr->values = malloc(sizeof(ValueArray));
     init_value_array(arr->values);
     return arr;
+}
+
+RangeObj* create_range_obj(Value* start, Value* finish, int step) {
+    RangeObj * range = ALLOCATE_OBJECT(RangeObj, OBJ_RANGE);
+    range->finish = finish;
+    range->start = start;
+    range->step = step;
+    return range;
 }
 
 

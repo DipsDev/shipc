@@ -91,25 +91,6 @@ static Value Number_times(int arg_count, Value* args) {
     return VAR_OBJ(values);
 }
 
-/*
- * Returns an array that contains all numbers fron i upto n including.
- */
-static Value Number_upto(int arg_count, Value* args) {
-    REQ_ARGS(1, arg_count, 1);
-    Value bottom = ATTRIBUTE_HOST(args);
-    Value top = *ATTRIBUTE_ARGS(args);
-
-    if (!IS_NUMBER(top)) {
-        ERROR("'Upto' expected number variable.", ERR_TYPE);
-    }
-
-    ArrayObj* arr = create_array_obj();
-
-    for (int i = AS_NUMBER(bottom); i <= AS_NUMBER(top); i++) {
-        write_value_array(arr->values, VAR_NUMBER(i));
-    }
-    return VAR_OBJ(arr);
-}
 
 static Value num_attrs(StringObj* attr_given) {
     switch(attr_given->value[0]) {
@@ -125,7 +106,6 @@ static Value num_attrs(StringObj* attr_given) {
         }
         case 'p': return RUN_ATTR("pred", 4, Number_pred);
         case 'e': return RUN_ATTR("even", 4, Number_even);
-        case 'u': return RUN_ATTR("upto", 4, Number_upto);
         case 'o': return RUN_ATTR("odd", 3, Number_odd);
         case 'n': return RUN_ATTR("next", 4, Number_next);
         default: return VAR_OBJ(create_err_obj("Number has no attribute", 23, ERR_NAME));
@@ -173,7 +153,7 @@ static Value string_attrs(StringObj* attr_given) {
 }
 
 /*----------------------
- |  String Builtins
+ |  Array Builtins
  -----------------------*/
 
 static Value Array_push(int arg_count, Value* args) {
@@ -230,6 +210,46 @@ static Value array_attrs(StringObj* attr_given) {
     }
 }
 
+
+/*----------------------
+ |  Range Builtins
+ -----------------------*/
+
+static Value Range_to_array(int arg_count, Value* args) {
+    REQ_ARGS(0, arg_count, 0);
+    RangeObj * range = AS_RANGE(ATTRIBUTE_HOST(args));
+
+    ArrayObj * new_array = create_array_obj();
+
+    int start = AS_NUMBER(*range->start);
+    int finish = AS_NUMBER(*range->finish);
+    int step = range->step;
+
+    // Populate the array based on step direction
+    if (step > 0) {
+        for (int current = start; current <= finish; current += step) {
+            // Push value into your array (adjust method name to match your ArrayObj API)
+            write_value_array(new_array->values, VAR_NUMBER(current));
+        }
+    } else {
+        for (int current = start; current >= finish; current += step) {
+            write_value_array(new_array->values, VAR_NUMBER(current));
+        }
+    }
+
+    return VAR_OBJ(new_array);
+}
+
+static Value range_attrs(StringObj* attr_given) {
+    switch(attr_given->value[0]) {
+        case 't': return RUN_ATTR("to_array", 8, Range_to_array);
+        default:
+            ERROR("Array has no attribute", ERR_NAME);
+    }
+}
+
+
+
 Value get_builtin_attr(Value attr_host, StringObj* attr_given) {
     switch (attr_host.type) {
         case VAL_NUMBER: return num_attrs(attr_given);
@@ -237,6 +257,7 @@ Value get_builtin_attr(Value attr_host, StringObj* attr_given) {
             switch(AS_OBJ(attr_host)->type) {
                 case OBJ_STRING: return string_attrs(attr_given);
                 case OBJ_ARRAY: return array_attrs(attr_given);
+                case OBJ_RANGE: return range_attrs(attr_given);
                 default:
                     ERROR("Not implemented; builtins.c", ERR_NAME);
             }
