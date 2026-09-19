@@ -53,17 +53,15 @@ var x = 3;
 | Number.to_str() |           | Returns the number as string                          | String      |
 | Number.next()   |           | Returns the next consecutive integer. (n + 1)         | Number      |
 | Number.pred()   |           | Returns the previous consecutive integer. (n - 1)     | Number      |
-| Number.times()  |           | Returns an array containing [0, self) excluding       | Array       |
 | Number.odd()    |           | Returns whether or not the number is odd              | Boolean     |
 | Number.even()   |           | Returns whether or not the number is even             | Boolean     |
-| Number.upto(n)  | n: Number | Returns an array from self until n [self, n] included | Array       |
 
 ### Variables
 Variables are essentially the same as in javascript. they are dynamic mutable.\
-variables are created using the `var` keyword following the identifier name. 
+variables are created using the `let` keyword following the identifier name. 
 ```javascript
-var my_name = "Ido";
-var hobby = "coding";
+let my_name = "Ido";
+let hobby = "coding";
 
 hobby = 4;
 my_name = nil;
@@ -82,7 +80,7 @@ ship supports the following syntax similar to how for loop works in python.\
 the following ship code equals to the following python code:\
 `main.ship`
 ```ruby
-var best_lang = "ship";
+let best_lang = "ship";
 for char in best_lang {
     print(char);
 }
@@ -99,7 +97,7 @@ for char in best_lang:
 ### Conditionals
 Ship uses a go like syntax in order to create if statements.
 ```javascript
-var a = 15;
+let a = 15;
 if a >= 3 {
     ...
 }
@@ -108,7 +106,7 @@ if a >= 3 {
 ### Arrays
 Arrays are a new feature in ship. they work like any other language.
 ```rust
-var classes = ["Biology", "Math", "Music", "English"];
+let classes = ["Biology", "Math", "Music", "English"];
 for class in classes {
     print(class);
 }
@@ -160,9 +158,5 @@ $ cmake --build /path/to/build-dir
 ```
 
 ## Roadmap
-- While loops (Done)
-- Global and local variables (Done)
-- Math expressions (Done)
-- Functions (Done)
-- Function arguments (Done)
-- Garbage collector (Done ish)
+- Classes
+- Maps
