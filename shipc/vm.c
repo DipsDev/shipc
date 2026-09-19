@@ -374,6 +374,10 @@ static InterpretResult run(VM* vm) {
                 Value finish = pop(vm);
                 Value start = pop(vm);
 
+                if (!IS_NUMBER(finish) || !IS_NUMBER(start)) {
+                    return runtime_error(vm, "range expected numbers.", ERR_TYPE);
+                }
+
                 RangeObj* range = create_range_obj(&start, &finish, 1);
                 push(vm, VAR_OBJ(range));
                 add_garbage(vm, VAR_OBJ(range));
