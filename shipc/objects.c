@@ -115,9 +115,9 @@ bool iterable_out_of_bounds(IterableObj * iterable) {
         }
         case OBJ_RANGE: {
             RangeObj* temp_obj = (RangeObj*) iterable->iterable;
-            double current = AS_NUMBER(*temp_obj->start) + (iterable->index * temp_obj->step);
+            double current = AS_NUMBER(temp_obj->start) + (iterable->index * temp_obj->step);
 
-            return current > AS_NUMBER(*temp_obj->finish);
+            return current > AS_NUMBER(temp_obj->finish);
         }
         default: return true; // Add more as the vm gets bigger
 
@@ -150,7 +150,7 @@ Value iterable_get_at(IterableObj* iterable, int index) {
         case OBJ_RANGE: {
             RangeObj* range = (RangeObj*) iterable->iterable;
 
-            double start_val = AS_NUMBER(*range->start);
+            double start_val = AS_NUMBER(range->start);
             double current_val = start_val + (index * range->step);
 
             return VAR_NUMBER(current_val);
@@ -210,8 +210,8 @@ ArrayObj* create_array_obj() {
 
 RangeObj* create_range_obj(Value* start, Value* finish, int step) {
     RangeObj * range = ALLOCATE_OBJECT(RangeObj, OBJ_RANGE);
-    range->finish = finish;
-    range->start = start;
+    range->finish = *finish;
+    range->start = *start;
     range->step = step;
     return range;
 }

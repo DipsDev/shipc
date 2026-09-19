@@ -106,9 +106,9 @@ static void print_object(Value obj_val) {
         case OBJ_RANGE: {
             RangeObj* range = AS_RANGE(obj_val);
             printf("Range(");
-            print_value(*range->start);
+            print_value(range->start);
             printf(",");
-            print_value(*range->finish);
+            print_value(range->finish);
             printf(",");
             print_value(VAR_NUMBER(range->step));
             printf(")");

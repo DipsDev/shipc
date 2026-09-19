@@ -221,8 +221,8 @@ static Value Range_to_array(int arg_count, Value* args) {
 
     ArrayObj * new_array = create_array_obj();
 
-    int start = AS_NUMBER(*range->start);
-    int finish = AS_NUMBER(*range->finish);
+    int start = AS_NUMBER(range->start);
+    int finish = AS_NUMBER(range->finish);
     int step = range->step;
 
     // Populate the array based on step direction

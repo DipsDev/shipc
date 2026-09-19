@@ -69,8 +69,8 @@ typedef struct {
 typedef struct {
 	Obj obj;
 
-	Value* start;
-	Value* finish;
+	Value start;
+	Value finish;
 	int step;
 } RangeObj;
 ///

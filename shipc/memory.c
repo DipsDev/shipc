@@ -38,9 +38,8 @@ void mark_object(Obj* obj) {
         case OBJ_RANGE: {
             RangeObj* range = (RangeObj*) obj;
 
-            mark_object(obj);
-            mark_value(*range->finish);
-            mark_value(*range->start);
+            mark_value(range->finish);
+            mark_value(range->start);
         }
         default: break;
     }
