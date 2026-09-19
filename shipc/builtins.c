@@ -242,7 +242,7 @@ static Value Range_to_array(int arg_count, Value* args) {
 
 static Value range_attrs(StringObj* attr_given) {
     switch(attr_given->value[0]) {
-        case 't': return RUN_ATTR("to_array", 8, Range_to_array);
+        case 't': return RUN_ATTR("to_arr", 6, Range_to_array);
         default:
             ERROR("Array has no attribute", ERR_NAME);
     }
