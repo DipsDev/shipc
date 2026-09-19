@@ -30,3 +30,6 @@ add_executable(shipc
         shipc/builtins.h)
 
 target_link_libraries(shipc m)
+target_compile_definitions(shipc PRIVATE
+        $<$<CONFIG:Debug>:SHIP_DEBUG>
+)
