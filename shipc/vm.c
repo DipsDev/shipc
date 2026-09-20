@@ -76,6 +76,49 @@ static InterpretResult runtime_error(VM* vm, const char* message, ErrorType type
 }
 
 
+// Invoke a method and push the result onto the stack
+static InterpretResult invoke(VM* vm, Value value, uint8_t arg_count) {
+    if (IS_NATIVE(value)) {
+        NativeFuncObj* native_obj = AS_NATIVE(value);
+        Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
+        vm->sp -= arg_count - 1;
+        push(vm, return_value);
+
+        return RESULT_SUCCESS;
+    }
+
+    if (IS_NATIVE_METHOD(value)) {
+        NativeFuncObj* native_obj = AS_NATIVE(value);
+        Value return_value = native_obj->function(arg_count, vm->sp - arg_count - 2);
+        vm->sp -= arg_count + 2;
+        if (IS_ERROR(return_value)) {
+            push(vm, return_value);
+            return RESULT_ERROR;
+        }
+
+        add_garbage(vm, return_value);
+        push(vm, return_value);
+        return RESULT_SUCCESS;
+    }
+
+
+    if (!IS_FUNCTION(value)) {
+        return runtime_error(vm, "object is not callable", ERR_NAME);
+    }
+
+    StackFrame func_frame;
+    func_frame.function = AS_FUNCTION(value);
+    func_frame.ip = func_frame.function->body.codes;
+
+    push_frame(vm, func_frame);
+
+    for (uint8_t i = arg_count; i >0; i--) {
+        Value curr_arg = pop(vm);
+        func_frame.function->locals[i - 1].value = curr_arg;
+    }
+    return RESULT_SUCCESS;
+}
+
 
 
 Value native_time(int arg_count, Value* args) {
@@ -139,7 +182,6 @@ static InterpretResult run(VM* vm) {
     StackFrame* frame = &vm->callStack[vm->frameCount - 1];
 #define READ_BYTE() (*frame->ip++)
 #define READ_CONSTANT() frame->function->body.constants.arr[READ_BYTE()]
-#define THROW_IF_ERROR(value) if (IS_ERROR(value)) throw_error(vm, AS_ERROR(value))
 #define READ_SHORT() \
 	(frame->ip += 2, (uint16_t) ((frame->ip[-2] << 8) | frame->ip[-1]))
 
@@ -343,16 +385,16 @@ static InterpretResult run(VM* vm) {
                 if (!IS_STRING(attr_name)) {
                     return runtime_error(vm, "Attribute name is expected to be a string", ERR_TYPE);
                 }
-                if (IS_CLASS(attr_host)) {
-                    // Classes are not implemented in ship yet..
-                    break;
-                }
+
                 Value attr_res = get_builtin_attr(attr_host, AS_STRING(attr_name));
                 if (IS_ERROR(attr_res)) {
                     throw_error(vm, (ErrorObj*) AS_OBJ(attr_res));
+                    break;
                 }
-                add_garbage(vm, attr_res);
-                push(vm, attr_res);
+
+                push(vm, attr_host);
+                invoke(vm, attr_res, 0);
+                frame = &vm->callStack[vm->frameCount - 1];
                 break;
             }
             case OP_BUILD_ARRAY: {
@@ -479,39 +521,7 @@ static InterpretResult run(VM* vm) {
 			case OP_CALL: {
                 uint8_t arg_count = READ_BYTE();
                 Value func_value = peek_behind(vm, arg_count + 1);
-
-                if (IS_NATIVE(func_value)) {
-                    NativeFuncObj* native_obj = AS_NATIVE(func_value);
-                    Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
-                    vm->sp -= arg_count - 1;
-                    push(vm, return_value);
-                    break;
-                }
-
-                if (IS_NATIVE_METHOD(func_value)) {
-                    NativeFuncObj* native_obj = AS_NATIVE(func_value);
-                    Value return_value = native_obj->function(arg_count, vm->sp - arg_count - 2);
-                    vm->sp -= arg_count + 2;
-                    THROW_IF_ERROR(return_value);
-                    add_garbage(vm, return_value);
-                    push(vm, return_value);
-                    break;
-                }
-
-
-                if (!IS_FUNCTION(func_value)) {
-                    return runtime_error(vm, "object is not callable", ERR_NAME);
-                }
-                StackFrame func_frame;
-                func_frame.function = AS_FUNCTION(func_value);
-                func_frame.ip = func_frame.function->body.codes;
-
-                push_frame(vm, func_frame);
-
-                for (uint8_t i = arg_count; i >0; i--) {
-                    Value curr_arg = pop(vm);
-                    func_frame.function->locals[i - 1].value = curr_arg;
-                }
+                invoke(vm, func_value, arg_count);
                 pop(vm);
                 frame = &vm->callStack[vm->frameCount - 1];
                 break;
