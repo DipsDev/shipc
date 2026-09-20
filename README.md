@@ -5,6 +5,7 @@ The language is 100% custom-made (only std libraries), with its own VM and bytec
 \
 Ship is a dynamic, high-level, garbage-collected language inspired by Javascript and Lua.\
 Ship uses curly braces (`{}`) to identify blocks, and requires `;`.
+Every method without arguments can be called without `()`, for example `arr.len`;
 
 
 ## Features
