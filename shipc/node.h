@@ -43,7 +43,7 @@ struct Node {
         } if_stmt;                                      // IF
         struct { Node* cond; NodeList body; } while_stmt;         // WHILE
         struct { Node* iterable; NodeList body; } for_stmt;       // FOR (loop variable is token)
-        struct { Token* params; int paramCount; NodeList body; } func;   // FUNC (name is token)
+        struct { Token* params; int paramCount; NodeList body; bool is_anon; } func;   // FUNC (name is token)
     } as;
 };
 

@@ -239,7 +239,7 @@ static Node* parse_array_literal(Parser* parser, Scanner* scanner) {
     while (parser->current.type != TOKEN_RIGHT_SQUARE_BRACE && parser->current.type != TOKEN_EOF) {
         node_list_push(&parser->arena, &n->as.items, parse_precedence(parser, scanner, PREC_OR));
         if (parser->current.type != TOKEN_RIGHT_SQUARE_BRACE) {
-            expect(scanner, parser, TOKEN_COMMA, "Expected , between array values");
+            expect(scanner, parser, TOKEN_COMMA, "expected , between array values");
         }
     }
     if (n->as.items.count > UINT8_MAX) {
@@ -259,7 +259,7 @@ static Node* parse_range_literal(Parser* parser, Scanner* scanner, Node* left) {
 
 static Node* parse_attribute(Parser* parser, Scanner* scanner, Node* object) {
     if (parser->current.type != TOKEN_IDENTIFIER) {
-        error(parser, scanner, "Expected identifier");
+        error(parser, scanner, "expected identifier");
         return object;
     }
     advance(scanner, parser);
@@ -270,7 +270,7 @@ static Node* parse_attribute(Parser* parser, Scanner* scanner, Node* object) {
 
 static Node* parse_print(Parser* parser, Scanner* scanner) {
     Node* n = node_new(&parser->arena, NODE_PRINT, parser->previous);
-    expect(scanner, parser, TOKEN_LEFT_PAREN, "Expected ( after print");
+    expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( after print");
     n->as.child = parse_expression(parser, scanner);
     expect(scanner, parser, TOKEN_RIGHT_PAREN, "Missing parentheses in call");
     return n;
@@ -295,12 +295,12 @@ static Node* parse_if(Parser* parser, Scanner* scanner) {
     Node* n = node_new(&parser->arena, NODE_IF, parser->previous);
     n->as.if_stmt.cond = parse_expression(parser, scanner);
     parse_block(parser, scanner, &n->as.if_stmt.then_body,
-                "Expected { after if expression", "Unclosed '}' after block");
+                "expected { after if expression", "Unclosed '}' after block");
     if (parser->current.type == TOKEN_ELSE) {
         advance(scanner, parser);                                      // eat 'else'
         n->as.if_stmt.hasElse = true;
         parse_block(parser, scanner, &n->as.if_stmt.else_body,
-                    "Expected '{' after else expression", "Unclosed '}' after block");
+                    "expected '{' after else expression", "Unclosed '}' after block");
     }
     return n;
 }
@@ -309,7 +309,7 @@ static Node* parse_while(Parser* parser, Scanner* scanner) {
     Node* n = node_new(&parser->arena, NODE_WHILE, parser->previous);
     n->as.while_stmt.cond = parse_expression(parser, scanner);
     parse_block(parser, scanner, &n->as.while_stmt.body,
-                "Expected { after while expression", "Expected } after open block");
+                "expected { after while expression", "expected } after open block");
     return n;
 }
 
@@ -319,15 +319,31 @@ static Node* parse_for(Parser* parser, Scanner* scanner) {
     expect(scanner, parser, TOKEN_IN, "expected in keyword after for loop");
     n->as.for_stmt.iterable = parse_expression(parser, scanner);
     parse_block(parser, scanner, &n->as.for_stmt.body,
-                "Expected { after for loop", "Expected } after for loop block");
+                "expected { after for loop", "expected } after for loop block");
     return n;
 }
 
 static Node* parse_func(Parser* parser, Scanner* scanner) {
-    expect(scanner, parser, TOKEN_IDENTIFIER, "Expected identifier");
-    Node* n = node_new(&parser->arena, NODE_FUNC, parser->previous);   // token = function name
+    bool is_anon = false;
+    Token name_tkn = parser->previous;
 
-    expect(scanner, parser, TOKEN_LEFT_PAREN, "Expected ( in function declaration");
+    // handle anon functions
+    if (parser->current.type == TOKEN_LEFT_PAREN) {
+        is_anon = true;
+        name_tkn.start = "<_anon>";
+        name_tkn.length = 7;
+    } else {
+        expect(scanner, parser, TOKEN_IDENTIFIER, "expected identifier for func");
+        name_tkn = parser->previous;
+    }
+
+    Node* n = node_new(&parser->arena, NODE_FUNC, name_tkn);   // token = function name
+    n->as.func.is_anon = is_anon;
+
+    expect(scanner, parser, TOKEN_LEFT_PAREN, "expected ( in function declaration");
+
+
+
 
     // collect the parameters on the C stack, then copy the exact amount into the arena
     Token tmp[255];
@@ -345,7 +361,7 @@ static Node* parse_func(Parser* parser, Scanner* scanner) {
         advance(scanner, parser);
 
         if (parser->current.type == TOKEN_EOF || parser->current.type == TOKEN_RIGHT_PAREN) break;
-        expect(scanner, parser, TOKEN_COMMA, "Expected ',' between function arguments");
+        expect(scanner, parser, TOKEN_COMMA, "expected ',' between function arguments");
     }
     if (count > 0) {
         n->as.func.params = (Token*) arena_alloc(&parser->arena, sizeof(Token) * count);
@@ -355,27 +371,27 @@ static Node* parse_func(Parser* parser, Scanner* scanner) {
 
     expect(scanner, parser, TOKEN_RIGHT_PAREN, "Unclosed ) in function declaration");
     parse_block(parser, scanner, &n->as.func.body,
-                "Expected open block in function declaration", "Unclosed block in function declaration");
+                "expected open block in function declaration", "Unclosed block in function declaration");
     return n;
 }
 
 static Node* parse_var(Parser* parser, Scanner* scanner) {
     // var x = 5;
-    expect(scanner, parser, TOKEN_IDENTIFIER, "Expected variable name after var");
+    expect(scanner, parser, TOKEN_IDENTIFIER, "expected variable name after var");
     Node* n = node_new(&parser->arena, NODE_VAR, parser->previous);
-    expect(scanner, parser, TOKEN_EQUAL, "Expected '=' after variable declaration");
+    expect(scanner, parser, TOKEN_EQUAL, "expected '=' after variable declaration");
     n->as.child = parse_precedence(parser, scanner, PREC_OR);
-    expect(scanner, parser, TOKEN_SEMICOLON, "Expected ;");
+    expect(scanner, parser, TOKEN_SEMICOLON, "expected ;");
     return n;
 }
 
 static Node* parse_global(Parser* parser, Scanner* scanner) {
     // glob x = 5;
-    expect(scanner, parser, TOKEN_IDENTIFIER, "Expected variable name after glob");
+    expect(scanner, parser, TOKEN_IDENTIFIER, "expected variable name after glob");
     Node* n = node_new(&parser->arena, NODE_GLOBAL, parser->previous);
-    expect(scanner, parser, TOKEN_EQUAL, "Expected '=' after global assignment");
+    expect(scanner, parser, TOKEN_EQUAL, "expected '=' after global assignment");
     n->as.child = parse_precedence(parser, scanner, PREC_OR);
-    expect(scanner, parser, TOKEN_SEMICOLON, "Expected ;");
+    expect(scanner, parser, TOKEN_SEMICOLON, "expected ;");
     return n;
 }
 
@@ -384,7 +400,9 @@ static Node* parse_return(Parser* parser, Scanner* scanner) {
     if (parser->current.type != TOKEN_SEMICOLON) {
         n->as.child = parse_precedence(parser, scanner, PREC_OR);      // stays NULL for a bare `return;`
     }
-    expect(scanner, parser, TOKEN_SEMICOLON, "Expected ;");
+    else if (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
+        expect(scanner, parser, TOKEN_SEMICOLON, "expected ;");
+    }
     return n;
 }
 
@@ -401,7 +419,7 @@ static Node* parse_statement(Parser* parser, Scanner* scanner) {
             // statements that only evaluate an expression, for ex: call(a,b,c);
             Node* n = node_new(&parser->arena, NODE_EXPR_STMT, parser->current);
             n->as.child = parse_expression(parser, scanner);
-            expect(scanner, parser, TOKEN_SEMICOLON, "Expected ;");
+            expect(scanner, parser, TOKEN_SEMICOLON, "expected ;");
             return n;
         }
     }
@@ -411,6 +429,7 @@ static Node* parse_statement(Parser* parser, Scanner* scanner) {
 // Statement keywords (fn, for, if, return, var, while, glob) are handled by
 // parse_statement and deliberately have no entry here: they are not expressions.
 static ParseRule rules[] = {
+        [TOKEN_FN]                 = {parse_func,          NULL,                PREC_CALL},
         [TOKEN_LEFT_PAREN]         = {parse_grouping,      parse_call,          PREC_CALL},
         [TOKEN_RIGHT_PAREN]        = {NULL,                NULL,                PREC_NONE},
         [TOKEN_LEFT_BRACE]         = {NULL,                NULL,                PREC_NONE},
@@ -663,7 +682,11 @@ static void compile_func(Compiler* c, Node* n) {
     uint8_t index = add_constant(current_chunk(c), VAR_OBJ(ctx.func));
     emit_bytes(c, OP_CONSTANT, index, line);
 
-    // register the function name
+    // register the function name if not anon
+    if (n->as.func.is_anon) {
+        return;
+    }
+
     unsigned int slot = add_variable(c, n->token.start, n->token.length);
     emit_bytes(c, OP_STORE_FAST, slot, line);
 }
