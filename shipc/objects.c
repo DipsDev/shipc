@@ -62,6 +62,16 @@ static void free_iterable(Obj* iter_obj) {
     free(obj);
 }
 
+static void free_range(Obj* range_obj) {
+    RangeObj * range = (RangeObj*) range_obj;
+    free(range);
+}
+
+static void free_method(Obj* method_obj) {
+    MethodBoundObj * m = (MethodBoundObj *) method_obj;
+    free(m);
+}
+
 void free_object(Obj* obj) {
 	switch (obj->type) {
 	case OBJ_STRING: return free_string(obj);
@@ -69,8 +79,10 @@ void free_object(Obj* obj) {
     case OBJ_ERROR: return free_error(obj);
     case OBJ_ITERABLE: return free_iterable(obj);
     case OBJ_ARRAY: return free_array(obj);
+    case OBJ_RANGE: return free_range(obj);
     case OBJ_NATIVE_METHOD:
     case OBJ_NATIVE: return free_native(obj);
+    case OBJ_METHOD: return free_method(obj);
 	default: printf("[ERROR] cannot free object, it is not yet supported. got object %d", obj->type); // unreachable
 	}
 }
@@ -102,9 +114,16 @@ bool iterable_out_of_bounds(IterableObj * iterable) {
             StringObj* temp_obj = (StringObj*) iterable->iterable;
             return temp_obj->length <= iterable->index;
 
-        } case OBJ_ARRAY: {
+        }
+        case OBJ_ARRAY: {
                 ArrayObj* temp_obj = (ArrayObj* )iterable->iterable;
                 return iterable->index >= temp_obj->values->count;
+        }
+        case OBJ_RANGE: {
+            RangeObj* temp_obj = (RangeObj*) iterable->iterable;
+            double current = AS_NUMBER(temp_obj->start) + (iterable->index * temp_obj->step);
+
+            return current > AS_NUMBER(temp_obj->finish);
         }
         default: return true; // Add more as the vm gets bigger
 
@@ -123,19 +142,52 @@ static Value copy_value(Value val) {
     }
 }
 
-Value iterable_get_at(IterableObj* iterable, int index) {
-    switch(iterable->iterable->type) {
+Value index_get_at(Obj* indexable, int index) {
+    switch (indexable->type) {
         case OBJ_STRING: {
-            StringObj* string_obj = CONVERT_OBJ(StringObj, iterable->iterable);
+            StringObj* string_obj = CONVERT_OBJ(StringObj, indexable);
             StringObj* val_obj = create_string_obj(string_obj->value + index, 1);
             return VAR_OBJ(val_obj);
         }
         case OBJ_ARRAY: {
-            ArrayObj* arr_obj = (ArrayObj*) iterable->iterable;
+            ArrayObj* arr_obj = (ArrayObj*) indexable;
             return copy_value(arr_obj->values->arr[index]);
+        }
+        case OBJ_RANGE: {
+            RangeObj* range = (RangeObj*) indexable;
+
+            double start_val = AS_NUMBER(range->start);
+            double current_val = start_val + (index * range->step);
+
+            return VAR_NUMBER(current_val);
         }
         default: return VAR_NIL;
     }
+}
+
+bool index_has_at(Obj* indexable, int index) {
+    switch (indexable->type) {
+        case OBJ_STRING: {
+            StringObj* string_obj = CONVERT_OBJ(StringObj, indexable);
+
+            return string_obj->length > index;
+        }
+        case OBJ_ARRAY: {
+            ArrayObj* arr_obj = (ArrayObj*) indexable;
+
+            return arr_obj->values->count > index;
+        }
+        case OBJ_RANGE: {
+            RangeObj* range = (RangeObj*) indexable;
+
+            return (range->finish.as.number - range->start.as.number) > index;
+        }
+        default: return false;
+    }
+}
+
+Value iterable_get_at(IterableObj* iterable, int index) {
+    return index_get_at(iterable->iterable, index);
 }
 // <------------------------------------>
 
@@ -187,6 +239,14 @@ ArrayObj* create_array_obj() {
     return arr;
 }
 
+RangeObj* create_range_obj(Value* start, Value* finish, int step) {
+    RangeObj * range = ALLOCATE_OBJECT(RangeObj, OBJ_RANGE);
+    range->finish = *finish;
+    range->start = *start;
+    range->step = step;
+    return range;
+}
+
 
 FunctionObj* create_func_obj(const char* value, int length, FunctionType type) {
 	// create the required arguments
@@ -218,6 +278,13 @@ NativeFuncObj* create_native_method_obj(NativeFn function) {
     NativeFuncObj* func_obj = ALLOCATE_OBJECT(NativeFuncObj, OBJ_NATIVE_METHOD);
     func_obj->function = function;
     return func_obj;
+}
+
+MethodBoundObj * create_method_obj(Value recv, Value method) {
+    MethodBoundObj * method_obj = ALLOCATE_OBJECT(MethodBoundObj, OBJ_METHOD);
+    method_obj->method = method;
+    method_obj->receiver = recv;
+    return method_obj;
 }
 
 IterableObj* get_iterable(Obj* iterable) {

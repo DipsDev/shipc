@@ -103,8 +103,19 @@ static void print_object(Value obj_val) {
             printf("]");
             break;
         }
+        case OBJ_RANGE: {
+            RangeObj* range = AS_RANGE(obj_val);
+            printf("Range(");
+            print_value(range->start);
+            printf(",");
+            print_value(range->finish);
+            printf(",");
+            print_value(VAR_NUMBER(range->step));
+            printf(")");
+            break;
+        }
         default:
-            printf("this would print a great things (if someone made a print case for it)");
+            printf("Not implemented print, got object %d", AS_OBJ(obj_val)->type);
             break;
     }
 }

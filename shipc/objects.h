@@ -65,13 +65,26 @@ typedef struct {
     Obj obj;
     ValueArray* values;
 } ArrayObj;
+
+typedef struct {
+	Obj obj;
+
+	Value start;
+	Value finish;
+	int step;
+} RangeObj;
+
+typedef struct {
+	Obj obj;
+
+	Value receiver;
+	Value method;
+} MethodBoundObj;
 ///
 
 
 
 #define CONVERT_OBJ(type, obj) (type*) obj
-#define IS_ITERABLE_ON(val) (IS_STRING(val) || IS_ARRAY(val)) // Add to this code as the vm progresses
-
 
 StringObj* create_string_obj(const char* value, int length);
 StringObj* concat_strings(const char* value1, int length1, const char* value2, int length2);
@@ -80,11 +93,17 @@ FunctionObj* create_func_obj(const char* value, int length, FunctionType type);
 NativeFuncObj* create_native_func_obj(NativeFn function);
 NativeFuncObj* create_native_method_obj(NativeFn function);
 
+MethodBoundObj * create_method_obj(Value recv, Value method);
+
+Value index_get_at(Obj* indexable, int index);
+bool index_has_at(Obj* indexable, int index);
+
 
 IterableObj* get_iterable(Obj* iterable);
 bool iterable_out_of_bounds(IterableObj * iterable);
 Value iterable_get_at(IterableObj* iterable, int index);
 ArrayObj* create_array_obj();
+RangeObj* create_range_obj(Value* start, Value* finish, int step);
 
 
 ErrorObj* create_err_obj(const char* value, int length, ErrorType type);

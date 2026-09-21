@@ -75,6 +75,50 @@ static InterpretResult runtime_error(VM* vm, const char* message, ErrorType type
     return RESULT_ERROR;
 }
 
+// Invoke a method and push the result onto the stack
+static InterpretResult invoke(VM* vm, Value value, uint8_t arg_count) {
+    if (IS_NATIVE(value)) {
+        NativeFuncObj* native_obj = AS_NATIVE(value);
+        Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
+        vm->sp -= arg_count - 1;
+        push(vm, return_value);
+
+        return RESULT_SUCCESS;
+    }
+
+    if (IS_NATIVE_METHOD(value)) {
+        NativeFuncObj* native_obj = AS_NATIVE(value);
+        Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
+        if (IS_ERROR(return_value)) {
+            push(vm, return_value);
+            return RESULT_ERROR;
+        }
+
+        add_garbage(vm, return_value);
+        vm->sp -= arg_count;
+        push(vm, return_value);
+        return RESULT_SUCCESS;
+    }
+
+
+    if (!IS_FUNCTION(value)) {
+        return runtime_error(vm, "object is not callable", ERR_NAME);
+    }
+
+    StackFrame func_frame;
+    func_frame.function = AS_FUNCTION(value);
+    func_frame.ip = func_frame.function->body.codes;
+
+    push_frame(vm, func_frame);
+
+    for (uint8_t i = arg_count; i >0; i--) {
+        Value curr_arg = pop(vm);
+        func_frame.function->locals[i - 1].value = curr_arg;
+    }
+
+    pop(vm); // pop the function itself
+    return RESULT_SUCCESS;
+}
 
 
 
@@ -139,7 +183,6 @@ static InterpretResult run(VM* vm) {
     StackFrame* frame = &vm->callStack[vm->frameCount - 1];
 #define READ_BYTE() (*frame->ip++)
 #define READ_CONSTANT() frame->function->body.constants.arr[READ_BYTE()]
-#define THROW_IF_ERROR(value) if (IS_ERROR(value)) throw_error(vm, AS_ERROR(value))
 #define READ_SHORT() \
 	(frame->ip += 2, (uint16_t) ((frame->ip[-2] << 8) | frame->ip[-1]))
 
@@ -257,6 +300,27 @@ static InterpretResult run(VM* vm) {
 				push(vm, VAR_NUMBER(mul));
 				break;
 			}
+            case OP_INDEX: {
+                Value index_val = pop(vm);
+                Value collection_val = pop(vm);
+                if (!IS_INDEXABLE(collection_val)) {
+                    return runtime_error(vm, "object is not indexable", ERR_TYPE);
+                }
+
+                if (!IS_NUMBER(index_val)) {
+                    return runtime_error(vm, "index must be of type <number>", ERR_TYPE);
+                }
+
+                if(!index_has_at(AS_OBJ(collection_val), AS_NUMBER(index_val))) {
+                    return runtime_error(vm, "out of bounds access", ERR_TYPE, collection_val);
+                }
+
+
+                Value val = index_get_at(AS_OBJ(collection_val), AS_NUMBER(index_val));
+                add_garbage(vm, val);
+                push(vm, val);
+                break;
+            }
 			case OP_SUB: {
 				Value b = pop(vm);
 				Value a = pop(vm);
@@ -338,20 +402,25 @@ static InterpretResult run(VM* vm) {
 			}
             case OP_LOAD_ATTR: {
                 Value attr_name = READ_CONSTANT();
-                Value attr_host = peek_behind(vm, 1);
+                Value attr_host = pop(vm);
 
                 if (!IS_STRING(attr_name)) {
                     return runtime_error(vm, "Attribute name is expected to be a string", ERR_TYPE);
                 }
-                if (IS_CLASS(attr_host)) {
-                    // Classes are not implemented in ship yet..
-                    break;
-                }
+
                 Value attr_res = get_builtin_attr(attr_host, AS_STRING(attr_name));
                 if (IS_ERROR(attr_res)) {
                     throw_error(vm, (ErrorObj*) AS_OBJ(attr_res));
+                    break;
                 }
-                add_garbage(vm, attr_res);
+
+                if (IS_CALLABLE(attr_res)) {
+                    Value obj = VAR_OBJ(create_method_obj(attr_host, attr_res));
+                    add_garbage(vm, obj);
+                    push(vm, obj);
+                    break;
+                }
+
                 push(vm, attr_res);
                 break;
             }
@@ -368,6 +437,19 @@ static InterpretResult run(VM* vm) {
 
                 push(vm, VAR_OBJ(arr));
                 add_garbage(vm, VAR_OBJ(arr));
+                break;
+            }
+            case OP_BUILD_RANGE: {
+                Value finish = pop(vm);
+                Value start = pop(vm);
+
+                if (!IS_NUMBER(finish) || !IS_NUMBER(start)) {
+                    return runtime_error(vm, "range expected numbers.", ERR_TYPE);
+                }
+
+                RangeObj* range = create_range_obj(&start, &finish, 1);
+                push(vm, VAR_OBJ(range));
+                add_garbage(vm, VAR_OBJ(range));
                 break;
             }
 			case OP_ASSIGN_GLOBAL: {
@@ -441,7 +523,7 @@ static InterpretResult run(VM* vm) {
                 break;
             }
             case OP_END_FOR: {
-                Value iter_obj = pop(vm);
+                pop(vm);
                 break;
             }
             case OP_FOR_ITER: {
@@ -465,41 +547,29 @@ static InterpretResult run(VM* vm) {
             }
 			case OP_CALL: {
                 uint8_t arg_count = READ_BYTE();
-                Value func_value = peek_behind(vm, arg_count + 1);
 
-                if (IS_NATIVE(func_value)) {
-                    NativeFuncObj* native_obj = AS_NATIVE(func_value);
-                    Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
-                    vm->sp -= arg_count - 1;
-                    push(vm, return_value);
-                    break;
+                Value* stack_slot = vm->sp - arg_count - 1;
+                Value callee = *stack_slot;
+                InterpretResult res;
+
+                if (IS_METHOD(callee)) {
+                    MethodBoundObj * method = AS_METHOD(callee);
+
+                    Value receiver = method->receiver;
+                    Value func = method->method;
+
+                    *stack_slot = receiver;
+
+                    res = invoke(vm, func, arg_count + 1);
+                }
+                else {
+                    res = invoke(vm, callee, arg_count);
                 }
 
-                if (IS_NATIVE_METHOD(func_value)) {
-                    NativeFuncObj* native_obj = AS_NATIVE(func_value);
-                    Value return_value = native_obj->function(arg_count, vm->sp - arg_count - 2);
-                    vm->sp -= arg_count + 2;
-                    THROW_IF_ERROR(return_value);
-                    add_garbage(vm, return_value);
-                    push(vm, return_value);
-                    break;
+                if (res == RESULT_ERROR) {
+                    return RESULT_ERROR;
                 }
 
-
-                if (!IS_FUNCTION(func_value)) {
-                    return runtime_error(vm, "object is not callable", ERR_NAME);
-                }
-                StackFrame func_frame;
-                func_frame.function = AS_FUNCTION(func_value);
-                func_frame.ip = func_frame.function->body.codes;
-
-                push_frame(vm, func_frame);
-
-                for (uint8_t i = arg_count; i >0; i--) {
-                    Value curr_arg = pop(vm);
-                    func_frame.function->locals[i - 1].value = curr_arg;
-                }
-                pop(vm);
                 frame = &vm->callStack[vm->frameCount - 1];
                 break;
 

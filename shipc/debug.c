@@ -62,9 +62,17 @@ static int constant_instruction(Chunk* chunk, int offset) {
 }
 
 static int jump_instruction(Chunk* chunk, char* op_code, int offset) {
-	uint8_t d1 = chunk->codes[offset + 1];
-	uint8_t d2 = chunk->codes[offset + 2];
-	printf("| %04d %s (%u) |\n",  offset, op_code, (((uint16_t)d1 << 8) | d2));
+	uint16_t dist = (((uint16_t)chunk->codes[offset + 1] << 8) | chunk->codes[offset + 2]);
+
+	// Logic for the label print
+	int target;
+	if (chunk->codes[offset] == OP_JUMP_BACKWARD) {
+		target = offset + 3 - dist; // Backward
+	} else {
+		target = offset + 3 + dist; // Forward
+	}
+
+	printf("| %04d %-16s (target: %04d) |\n", offset, op_code, target);
 	return 3;
 }
 
@@ -102,9 +110,11 @@ static int disassemble_instruction(FunctionObj * func, int offset) {
 		case OP_POP_TOP: return simple_instruction("OP_POP_TOP", offset);
 		case OP_COMPARE: return simple_instruction("OP_COMPARE", offset);
         case OP_RETURN: return simple_instruction("OP_RETURN", offset);
+		case OP_BUILD_RANGE: return simple_instruction("OP_BUILD_RANGE", offset);
 		case OP_CONSTANT: return constant_instruction(&func->body, offset);
+		case OP_INDEX: return simple_instruction("OP_INDEX", offset);
         default: {
-            printf("Uncaught opcode %u", code);
+            printf("uncaught opcode %u", code);
             return 1;
         }
 

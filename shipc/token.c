@@ -1,5 +1,4 @@
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "token.h"
@@ -83,14 +82,14 @@ static bool is_alpha(char c) {
 }
 
 static Token number(Scanner* scanner) {
-	// run until you encounter a non numerical character.
+	// run until you encounter a non-numerical character.
 	while (is_numeric(peek(scanner))) advance(scanner);
 
 	// if encounter a .
 	if (peek(scanner) == '.' && is_numeric(peek_next(scanner))) {
 		// eat the .
 		advance(scanner);
-		// advance until encountering another non numerical character.
+		// advance until encountering another non-numerical character.
 		// because we already ate the ., encoutering another . will not take it as a valid number. but a regular dot.
 		while (is_numeric(peek(scanner))) advance(scanner);
 	}
@@ -109,27 +108,27 @@ static TokenType reserved_keywords(Scanner* scanner, int length, const char* res
 static TokenType identifier_type(Scanner* scanner) {
 	switch (*(scanner->start))
 	{
-		case 'v': return reserved_keywords(scanner, 2, "ar", TOKEN_VAR);
+		case 'l': return reserved_keywords(scanner, 2, "et", TOKEN_VAR);
         case 'e': return reserved_keywords(scanner, 3, "lse", TOKEN_ELSE);
 		case 'f': {
-			if (scanner->current - scanner->start >= 1) {
-				switch (scanner->start[1]) {
+			switch (scanner->start[1]) {
 				case 'a': return reserved_keywords(scanner, 4, "alse", TOKEN_FALSE);
-				case 'n': return reserved_keywords(scanner, 1, "n", TOKEN_FN);
-                case 'o': {
-                    if (scanner->current - scanner->start == 3) {
-                        return reserved_keywords(scanner, 2, "or", TOKEN_FOR);
-                    }
-                    return reserved_keywords(scanner, 6, "oreach", TOKEN_FOREACH);
-                }
+				case 'u': return reserved_keywords(scanner, 2, "un", TOKEN_FN);
+				case 'o': return reserved_keywords(scanner, 2, "or", TOKEN_FOR);
 				default: return TOKEN_IDENTIFIER;
-				}
 			}
+
 		}
         case 'r': return reserved_keywords(scanner, 5, "eturn", TOKEN_RETURN);
 		case 't': return reserved_keywords(scanner, 3, "rue", TOKEN_TRUE);
 		case 'n': return reserved_keywords(scanner, 2, "il", TOKEN_NIL);
-		case 'i': return reserved_keywords(scanner, 1, "f", TOKEN_IF);
+		case 'i': {
+			switch(scanner->start[1]) {
+				case 'n': return reserved_keywords(scanner, 1, "n", TOKEN_IN);
+				case 'f': return reserved_keywords(scanner, 1, "f", TOKEN_IF);
+				default: return TOKEN_IDENTIFIER;
+			}
+		}
 		case 'p': return reserved_keywords(scanner, 4, "rint", TOKEN_PRINT);
         case 'g': return reserved_keywords(scanner, 3, "lob", TOKEN_GLOBAL);
         case 'w': return reserved_keywords(scanner, 4, "hile", TOKEN_WHILE);
@@ -200,7 +199,9 @@ static Token scan_token(Scanner *scanner) {
 		case '}': return create_token(scanner, TOKEN_RIGHT_BRACE); 
 		case '(': return create_token(scanner, TOKEN_LEFT_PAREN); 
 		case ')': return create_token(scanner, TOKEN_RIGHT_PAREN); 
-		case '.': return create_token(scanner, TOKEN_DOT);
+		case '.': {
+            return create_token(scanner, match(scanner, '.') ? TOKEN_DOT_DOT : TOKEN_DOT);
+        }
 		case ',': return create_token(scanner, TOKEN_COMMA);
 		case '=': {
 			return create_token(scanner, match(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);

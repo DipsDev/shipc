@@ -14,12 +14,13 @@ typedef enum {
 	TOKEN_EQUAL, TOKEN_EQUAL_EQUAL,
 	TOKEN_GREATER, TOKEN_GREATER_EQUAL,
 	TOKEN_LESS, TOKEN_LESS_EQUAL,
+	TOKEN_DOT_DOT,
 	// Literals.
 	TOKEN_IDENTIFIER, TOKEN_STRING, TOKEN_NUMBER,
 	// Keywords.
 	TOKEN_ELSE, TOKEN_FALSE,
 	TOKEN_FOR, TOKEN_FN, TOKEN_IF, TOKEN_NIL,
-    TOKEN_FOREACH,
+    TOKEN_IN,
 	TOKEN_PRINT, TOKEN_RETURN, TOKEN_SUPER, TOKEN_THIS,
 	TOKEN_TRUE, TOKEN_VAR, TOKEN_WHILE, TOKEN_GLOBAL,
 
@@ -28,15 +29,15 @@ typedef enum {
 
 typedef struct {
 	TokenType type;
-	char* start;
+	const char* start;
 	int length;
 	int line;
     int lineOffset;
 } Token;
 
 typedef struct {
-	char* start;
-	char* current;
+	const char* start;
+	const char* current;
 	int line;
     int lineOffset;
 } Scanner;
