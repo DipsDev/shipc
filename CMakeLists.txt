@@ -27,7 +27,11 @@ add_executable(shipc
         shipc/vm.h
         shipc/builtins.c
         shipc/builtins.h
-        shipc/builtins.h)
+        shipc/builtins.h
+        shipc/arena.c
+        shipc/arena.h
+        shipc/node.c
+        shipc/node.h)
 
 target_link_libraries(shipc m)
 target_compile_definitions(shipc PRIVATE
