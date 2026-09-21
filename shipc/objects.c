@@ -67,6 +67,11 @@ static void free_range(Obj* range_obj) {
     free(range);
 }
 
+static void free_method(Obj* method_obj) {
+    MethodBoundObj * m = (MethodBoundObj *) method_obj;
+    free(m);
+}
+
 void free_object(Obj* obj) {
 	switch (obj->type) {
 	case OBJ_STRING: return free_string(obj);
@@ -77,6 +82,7 @@ void free_object(Obj* obj) {
     case OBJ_RANGE: return free_range(obj);
     case OBJ_NATIVE_METHOD:
     case OBJ_NATIVE: return free_native(obj);
+    case OBJ_METHOD: return free_method(obj);
 	default: printf("[ERROR] cannot free object, it is not yet supported. got object %d", obj->type); // unreachable
 	}
 }
@@ -136,19 +142,19 @@ static Value copy_value(Value val) {
     }
 }
 
-Value iterable_get_at(IterableObj* iterable, int index) {
-    switch(iterable->iterable->type) {
+Value index_get_at(Obj* indexable, int index) {
+    switch (indexable->type) {
         case OBJ_STRING: {
-            StringObj* string_obj = CONVERT_OBJ(StringObj, iterable->iterable);
+            StringObj* string_obj = CONVERT_OBJ(StringObj, indexable);
             StringObj* val_obj = create_string_obj(string_obj->value + index, 1);
             return VAR_OBJ(val_obj);
         }
         case OBJ_ARRAY: {
-            ArrayObj* arr_obj = (ArrayObj*) iterable->iterable;
+            ArrayObj* arr_obj = (ArrayObj*) indexable;
             return copy_value(arr_obj->values->arr[index]);
         }
         case OBJ_RANGE: {
-            RangeObj* range = (RangeObj*) iterable->iterable;
+            RangeObj* range = (RangeObj*) indexable;
 
             double start_val = AS_NUMBER(range->start);
             double current_val = start_val + (index * range->step);
@@ -157,6 +163,31 @@ Value iterable_get_at(IterableObj* iterable, int index) {
         }
         default: return VAR_NIL;
     }
+}
+
+bool index_has_at(Obj* indexable, int index) {
+    switch (indexable->type) {
+        case OBJ_STRING: {
+            StringObj* string_obj = CONVERT_OBJ(StringObj, indexable);
+
+            return string_obj->length > index;
+        }
+        case OBJ_ARRAY: {
+            ArrayObj* arr_obj = (ArrayObj*) indexable;
+
+            return arr_obj->values->count > index;
+        }
+        case OBJ_RANGE: {
+            RangeObj* range = (RangeObj*) indexable;
+
+            return (range->finish.as.number - range->start.as.number) > index;
+        }
+        default: return false;
+    }
+}
+
+Value iterable_get_at(IterableObj* iterable, int index) {
+    return index_get_at(iterable->iterable, index);
 }
 // <------------------------------------>
 
@@ -247,6 +278,13 @@ NativeFuncObj* create_native_method_obj(NativeFn function) {
     NativeFuncObj* func_obj = ALLOCATE_OBJECT(NativeFuncObj, OBJ_NATIVE_METHOD);
     func_obj->function = function;
     return func_obj;
+}
+
+MethodBoundObj * create_method_obj(Value recv, Value method) {
+    MethodBoundObj * method_obj = ALLOCATE_OBJECT(MethodBoundObj, OBJ_METHOD);
+    method_obj->method = method;
+    method_obj->receiver = recv;
+    return method_obj;
 }
 
 IterableObj* get_iterable(Obj* iterable) {

@@ -7,8 +7,8 @@
 
 // Helper macro to set the min and max arguments a builtin takes
 #define REQ_ARGS(min, got, max) \
-    if (got < min) return VAR_OBJ(create_err_obj("Not Enough Parameters", 21, ERR_SYNTAX)); \
-    if (got > max) return VAR_OBJ(create_err_obj("Too much arguments given", 24, ERR_SYNTAX)) \
+    if (got < min) return VAR_OBJ(create_err_obj("not enough arguments", 20, ERR_SYNTAX)); \
+    if (got > max) return VAR_OBJ(create_err_obj("too much arguments given", 24, ERR_SYNTAX)) \
 
 static Value validate_attr(StringObj* attr_obj, const char* real_attr, int real_attr_length, NativeFn fn) {
     if (attr_obj->length == real_attr_length && memcmp(attr_obj->value, real_attr, real_attr_length) == 0) {
@@ -18,7 +18,7 @@ static Value validate_attr(StringObj* attr_obj, const char* real_attr, int real_
 }
 
 #define RUN_ATTR(attr_name, attr_length, func) validate_attr(attr_given, attr_name, attr_length, func)
-#define ATTRIBUTE_HOST(args) *args
+#define ATTRIBUTE_HOST(args) args[0]
 #define ATTRIBUTE_ARGS(args) (args + 2);
 
 #define ERROR(str, type) return VAR_OBJ(create_err_obj(str, strlen(str), type));
@@ -157,9 +157,11 @@ static Value string_attrs(StringObj* attr_given) {
  -----------------------*/
 
 static Value Array_push(int arg_count, Value* args) {
-    REQ_ARGS(1, arg_count, 1);
-    ArrayObj* arr = AS_ARRAY(*args);
-    Value val = *ATTRIBUTE_ARGS(args);
+    REQ_ARGS(2, arg_count, 2);
+    Value receiver_val = ATTRIBUTE_HOST(args);
+    ArrayObj* arr = AS_ARRAY(receiver_val);
+    Value val = args[1];
+
     write_value_array(arr->values, val);
     return VAR_NIL;
 }

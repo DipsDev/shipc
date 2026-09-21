@@ -253,7 +253,7 @@ static Node* parse_array_literal(Parser* parser, Scanner* scanner) {
 static Node* parse_range_literal(Parser* parser, Scanner* scanner, Node* left) {
     Node* n = node_new(&parser->arena, NODE_RANGE, parser->previous);
     n->as.binary.left  = left;
-    n->as.binary.right = parse_precedence(parser, scanner, (Precedence)(PREC_COMPARISON + 1));
+    n->as.binary.right = parse_precedence(parser, scanner, (Precedence) (PREC_CALL + 1));
     return n;
 }
 
@@ -262,6 +262,7 @@ static Node* parse_attribute(Parser* parser, Scanner* scanner, Node* object) {
         error(parser, scanner, "expected identifier");
         return object;
     }
+
     advance(scanner, parser);
     Node* n = node_new(&parser->arena, NODE_ATTR, parser->previous);   // token = attribute name
     n->as.child = object;
@@ -395,13 +396,30 @@ static Node* parse_global(Parser* parser, Scanner* scanner) {
     return n;
 }
 
+static Node* parse_subscript(Parser* parser, Scanner* scanner, Node* nd) {
+    Node* n = node_new(&parser->arena, NODE_BINARY, parser->previous);
+    n->as.binary.left = nd;
+    n->as.binary.right = parse_precedence(parser, scanner, PREC_UNARY);
+    expect(scanner, parser, TOKEN_RIGHT_SQUARE_BRACE, "expected ] for index operation");
+    return n;
+}
+
 static Node* parse_return(Parser* parser, Scanner* scanner) {
     Node* n = node_new(&parser->arena, NODE_RETURN, parser->previous);
-    if (parser->current.type != TOKEN_SEMICOLON) {
-        n->as.child = parse_precedence(parser, scanner, PREC_OR);      // stays NULL for a bare `return;`
+    if (parser->current.type != TOKEN_SEMICOLON &&
+        parser->current.type != TOKEN_RIGHT_BRACE &&
+        parser->current.type != TOKEN_EOF) {
+        n->as.child = parse_precedence(parser, scanner, PREC_OR);
     }
-    else if (parser->current.type != TOKEN_RIGHT_BRACE && parser->current.type != TOKEN_EOF) {
-        expect(scanner, parser, TOKEN_SEMICOLON, "expected ;");
+
+    // Consume the semicolon if present
+    if (parser->current.type == TOKEN_SEMICOLON) {
+        advance(scanner, parser);
+    } // Enforce the semicolon, UNLESS it's safely tucked right before a block's closing '}'
+    if (parser->current.type == TOKEN_SEMICOLON) {
+        advance(scanner, parser);
+    } else if (parser->current.type != TOKEN_RIGHT_BRACE) {
+        error(parser, scanner, "expected ';' after return value");
     }
     return n;
 }
@@ -434,8 +452,8 @@ static ParseRule rules[] = {
         [TOKEN_RIGHT_PAREN]        = {NULL,                NULL,                PREC_NONE},
         [TOKEN_LEFT_BRACE]         = {NULL,                NULL,                PREC_NONE},
         [TOKEN_RIGHT_BRACE]        = {NULL,                NULL,                PREC_NONE},
-        [TOKEN_LEFT_SQUARE_BRACE]  = {parse_array_literal, NULL,                PREC_NONE},
-        [TOKEN_DOT_DOT]            = {NULL,                parse_range_literal, PREC_CALL},
+        [TOKEN_LEFT_SQUARE_BRACE]  = {parse_array_literal, parse_subscript,     PREC_CALL},
+        [TOKEN_DOT_DOT]            = {NULL,                parse_range_literal, PREC_PRIMARY},
         [TOKEN_RIGHT_SQUARE_BRACE] = {NULL,                NULL,                PREC_NONE},
         [TOKEN_COMMA]              = {NULL,                NULL,                PREC_NONE},
         [TOKEN_DOT]                = {NULL,                parse_attribute,     PREC_CALL},
@@ -580,7 +598,8 @@ static void compile_binary(Compiler* c, Node* n) {
         case TOKEN_LESS_EQUAL:    emit(c, OP_GREATER_THAN, line); emit(c, OP_NOT, line); break;
         case TOKEN_GREATER:       emit(c, OP_GREATER_THAN, line); break;
         case TOKEN_GREATER_EQUAL: emit(c, OP_LESS_THAN, line);    emit(c, OP_NOT, line); break;
-        default: compile_error(c, n->token, "Unexpected Binary Token");   // unreachable
+        case TOKEN_LEFT_SQUARE_BRACE: emit(c, OP_INDEX, line); break;
+        default: compile_error(c, n->token, "unexpected binary token");   // unreachable
     }
 }
 
@@ -754,6 +773,7 @@ static void compile_node(Compiler* c, Node* n) {
             for (int i = 0; i < n->as.call.args.count; i++) {
                 compile_node(c, n->as.call.args.items[i]);
             }
+
             emit_bytes(c, OP_CALL, n->as.call.args.count, line);
             break;
         case NODE_ATTR:

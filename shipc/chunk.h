@@ -34,6 +34,7 @@ typedef enum { // available op codes
 	OP_SHOW_TOP,
 	OP_COMPARE,
     OP_GREATER_THAN,
+	OP_INDEX,
     OP_LESS_THAN,
 	OP_NEGATE,
 	OP_POP_JUMP_IF_FALSE,

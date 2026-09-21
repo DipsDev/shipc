@@ -89,10 +89,10 @@ static InterpretResult invoke(VM* vm, Value value, uint8_t arg_count) {
 
     if (IS_NATIVE_METHOD(value)) {
         NativeFuncObj* native_obj = AS_NATIVE(value);
-        Value return_value = native_obj->function(arg_count, vm->sp - arg_count - 2);
-        vm->sp -= arg_count + 2;
+        Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
         if (IS_ERROR(return_value)) {
             push(vm, return_value);
+            printf("gang");
             return RESULT_ERROR;
         }
 
@@ -116,6 +116,8 @@ static InterpretResult invoke(VM* vm, Value value, uint8_t arg_count) {
         Value curr_arg = pop(vm);
         func_frame.function->locals[i - 1].value = curr_arg;
     }
+
+    pop(vm); // pop the function itself
     return RESULT_SUCCESS;
 }
 
@@ -299,6 +301,27 @@ static InterpretResult run(VM* vm) {
 				push(vm, VAR_NUMBER(mul));
 				break;
 			}
+            case OP_INDEX: {
+                Value index_val = pop(vm);
+                Value collection_val = pop(vm);
+                if (!IS_INDEXABLE(collection_val)) {
+                    return runtime_error(vm, "object is not indexable", ERR_TYPE);
+                }
+
+                if (!IS_NUMBER(index_val)) {
+                    return runtime_error(vm, "index must be of type <number>", ERR_TYPE);
+                }
+
+                if(!index_has_at(AS_OBJ(collection_val), AS_NUMBER(index_val))) {
+                    return runtime_error(vm, "out of bounds access", ERR_TYPE, collection_val);
+                }
+
+
+                Value val = index_get_at(AS_OBJ(collection_val), AS_NUMBER(index_val));
+                add_garbage(vm, val);
+                push(vm, val);
+                break;
+            }
 			case OP_SUB: {
 				Value b = pop(vm);
 				Value a = pop(vm);
@@ -380,7 +403,7 @@ static InterpretResult run(VM* vm) {
 			}
             case OP_LOAD_ATTR: {
                 Value attr_name = READ_CONSTANT();
-                Value attr_host = peek_behind(vm, 1);
+                Value attr_host = pop(vm);
 
                 if (!IS_STRING(attr_name)) {
                     return runtime_error(vm, "Attribute name is expected to be a string", ERR_TYPE);
@@ -392,9 +415,14 @@ static InterpretResult run(VM* vm) {
                     break;
                 }
 
-                push(vm, attr_host);
-                invoke(vm, attr_res, 0);
-                frame = &vm->callStack[vm->frameCount - 1];
+                if (IS_CALLABLE(attr_res)) {
+                    Value obj = VAR_OBJ(create_method_obj(attr_host, attr_res));
+                    add_garbage(vm, obj);
+                    push(vm, obj);
+                    break;
+                }
+
+                push(vm, attr_res);
                 break;
             }
             case OP_BUILD_ARRAY: {
@@ -496,7 +524,7 @@ static InterpretResult run(VM* vm) {
                 break;
             }
             case OP_END_FOR: {
-                Value iter_obj = pop(vm);
+                pop(vm);
                 break;
             }
             case OP_FOR_ITER: {
@@ -520,9 +548,24 @@ static InterpretResult run(VM* vm) {
             }
 			case OP_CALL: {
                 uint8_t arg_count = READ_BYTE();
-                Value func_value = peek_behind(vm, arg_count + 1);
-                invoke(vm, func_value, arg_count);
-                pop(vm);
+
+                Value* stack_slot = vm->sp - arg_count - 1;
+                Value callee = *stack_slot;
+
+                if (IS_METHOD(callee)) {
+                    MethodBoundObj * method = AS_METHOD(callee);
+
+                    Value receiver = method->receiver;
+                    Value func = method->method;
+
+                    *stack_slot = receiver;
+
+                    invoke(vm, func, arg_count + 1);
+                }
+                else {
+                    invoke(vm, callee, arg_count);
+                }
+
                 frame = &vm->callStack[vm->frameCount - 1];
                 break;
 
