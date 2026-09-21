@@ -7,6 +7,8 @@ Ship is a dynamic, high-level, garbage-collected language inspired by Javascript
 Ship uses curly braces (`{}`) to identify blocks, and requires `;`.
 Every method without arguments can be called without `()`, for example `arr.len`;
 
+See `examples/` dir for example usage.
+
 
 ## Features
 ### Values
