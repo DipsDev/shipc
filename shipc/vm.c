@@ -75,7 +75,6 @@ static InterpretResult runtime_error(VM* vm, const char* message, ErrorType type
     return RESULT_ERROR;
 }
 
-
 // Invoke a method and push the result onto the stack
 static InterpretResult invoke(VM* vm, Value value, uint8_t arg_count) {
     if (IS_NATIVE(value)) {
@@ -92,11 +91,11 @@ static InterpretResult invoke(VM* vm, Value value, uint8_t arg_count) {
         Value return_value = native_obj->function(arg_count, vm->sp - arg_count);
         if (IS_ERROR(return_value)) {
             push(vm, return_value);
-            printf("gang");
             return RESULT_ERROR;
         }
 
         add_garbage(vm, return_value);
+        vm->sp -= arg_count;
         push(vm, return_value);
         return RESULT_SUCCESS;
     }
@@ -551,6 +550,7 @@ static InterpretResult run(VM* vm) {
 
                 Value* stack_slot = vm->sp - arg_count - 1;
                 Value callee = *stack_slot;
+                InterpretResult res;
 
                 if (IS_METHOD(callee)) {
                     MethodBoundObj * method = AS_METHOD(callee);
@@ -560,10 +560,14 @@ static InterpretResult run(VM* vm) {
 
                     *stack_slot = receiver;
 
-                    invoke(vm, func, arg_count + 1);
+                    res = invoke(vm, func, arg_count + 1);
                 }
                 else {
-                    invoke(vm, callee, arg_count);
+                    res = invoke(vm, callee, arg_count);
+                }
+
+                if (res == RESULT_ERROR) {
+                    return RESULT_ERROR;
                 }
 
                 frame = &vm->callStack[vm->frameCount - 1];
