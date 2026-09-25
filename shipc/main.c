@@ -7,12 +7,12 @@
 
 #include <time.h>
 
-static char* read_source_code() {
+static char* read_source_code(char* path) {
     FILE *fptr;
-    fptr = fopen("../main.ship", "r");
+    fptr = fopen(path, "rb");
 
     if (fptr == NULL) {
-        printf("[ERROR] couldn't read source code.");
+        printf("[ERROR] couldn't read file %s.", path);
         exit(1);
     }
 
@@ -31,8 +31,8 @@ static char* read_source_code() {
     return buffer;
 }
 
-void run_code() {
-    char* source_code = read_source_code();
+void run_code(char* path) {
+    char* source_code = read_source_code(path);
     FunctionObj* compiled_func = compile(source_code);
     if (compiled_func == NULL) {
         free(source_code);
@@ -52,6 +52,11 @@ void run_code() {
 }
 
 int main(int argc, char** argv) {
-    run_code();
-	return 0;
+    if (argc == 1) {
+        printf("[ERROR] expected at least one argument.");
+        exit(1);
+    }
+
+    run_code(argv[1]);
+    return 0;
 }

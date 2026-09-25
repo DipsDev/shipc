@@ -185,11 +185,11 @@ static Token scan_token(Scanner *scanner) {
             if (!match(scanner, '/')) {
                 return create_token(scanner, TOKEN_SLASH);
             }
-            while (peek(scanner) != '\n' && peek(scanner) != '\r') {
+            while (peek(scanner) != '\n' && peek(scanner) != '\r' && !isAtEnd(scanner)) {
                 advance(scanner);
             }
             remove_whitespaces(scanner);
-            return scan_token(scanner);
+            return tokenize(scanner);
         }
 		case '-': return create_token(scanner, TOKEN_MINUS);
         case '|': return create_token(scanner, TOKEN_VERTICAL_BAR);
