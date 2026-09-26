@@ -1,0 +1,22 @@
+let numbers = [10, 20, 30];
+print(numbers[0]);
+//beacon: expect 10
+
+print(numbers[1]);
+//beacon: expect 20
+
+print(numbers[2]);
+//beacon: expect 30
+
+numbers.push(33);
+print(numbers[3]);
+//beacon: expect 33
+
+print(numbers);
+//beacon: expect [10 20 30 33]
+
+print(numbers.len());
+//beacon: expect 4
+
+
+//beacon: exit 0

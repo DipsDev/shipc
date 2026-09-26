@@ -1,0 +1,10 @@
+fun count(n) {
+    if n == 0 {
+        return 0;
+    }
+    return n + count(n-1);
+}
+
+print(count(5));
+
+//beacon: expect 10

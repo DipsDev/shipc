@@ -1,0 +1,17 @@
+let x = 15;
+let y = 25;
+let sum = x + y;
+print(sum);
+//beacon: expect 40
+
+let doubled = x * 2;
+print(doubled);
+//beacon: expect 30
+
+print(y / 5);
+//beacon: expect 5
+
+print(y - x);
+//beacon: expect 10
+
+//beacon: exit 0

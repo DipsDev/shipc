@@ -1,0 +1,18 @@
+fun check(x) {
+    if x > 10 {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
+//beacon: expect 1
+print(check(15));
+
+//beacon: expect 0
+print(check(-30));
+
+
+
+//beacon: exit 0
